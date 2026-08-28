@@ -50,6 +50,10 @@ class ConfigDiscoveryError(ArgConfigError):
     """Raised when configuration files cannot be read or parsed."""
 
 
+class CliUsageError(ArgConfigError):
+    """Raised for malformed command-line input (unknown or incomplete options)."""
+
+
 class Exit(ArgConfigError):
     """Raised to stop processing and exit (e.g. after printing ``--help``)."""
 
