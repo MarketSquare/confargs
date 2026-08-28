@@ -29,27 +29,25 @@ class Greeter(ArgConfig):
     """greeter - a tiny self-contained CLI built with confargs."""
 
     name = "greeter"
-    # Expose GREETER_<OPTION> for every configurable option.
-    auto_env_vars = True
 
     @confargs.option(names="--argumentfile/-A", config=False, is_eager=True)
     def argumentfile(self, value: str | None = None) -> list[str] | None:
         """Read more command-line arguments from a file (resolved first)."""
         return confargs.read_argument_file(value) if value else None
 
-    @confargs.option
+    @confargs.option(env=True)
     def who(self, value: str = "World") -> str:
-        """Who to greet."""
+        """Who to greet. Also reads $GREETER_WHO."""
         return value
 
-    @confargs.option
+    @confargs.option(env=True)
     def repeat(self, value: int = 1) -> int:
         """How many times to print the greeting."""
         if value < 1:
             raise confargs.OptionValueError("repeat must be >= 1")
         return value
 
-    @confargs.option
+    @confargs.option(env=True)
     def color(self, value: bool = True) -> bool:
         """Colorize the output. Disable with --no-color."""
         return value

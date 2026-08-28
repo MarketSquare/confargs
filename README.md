@@ -84,9 +84,27 @@ early. Set `strict_config = False` on your class to silently ignore them instead
 
 ### Environment variables
 
-Set a name per option with `@option(envvar="MYTOOL_LOG")`, or enable
-`auto_env_vars = True` on the class to expose every configurable option as
-`<NAME>_<OPTION>` (e.g. `MYTOOL_CONSOLE`).
+Reading from the environment is **opt-in per option**. Pass `env=True` to use a
+generated name, or `env="MY_NAME"` for an explicit one:
+
+```python
+@option(env=True)  # reads $MYTOOL_LOG (from the class template)
+def log(self, value: str = "log.html") -> str: ...
+
+
+@option(env="LOG_FILE")  # reads $LOG_FILE
+def log2(self, value: str = "log.html") -> str: ...
+```
+
+The generated name comes from the class `env_var_template` (default
+`"{name}_{option}"`), formatted with the tool `name` and the `option` attribute
+name and upper-cased — e.g. `MYTOOL_LOG`. Override it per class:
+
+```python
+class Args(ArgConfig):
+    name = "mytool"
+    env_var_template = "MYTOOL_CFG_{option}"  # -> MYTOOL_CFG_LOG
+```
 
 ### Restricting where an option is read from
 
@@ -100,7 +118,7 @@ Two independent toggles control which sources feed an option:
   options above are defined this way).
 
 Combine them as needed, e.g. a CLI-only switch is `@option(config=False)` with
-no `envvar`.
+`env` left off.
 
 ## Options in depth
 

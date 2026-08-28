@@ -41,6 +41,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Environment-variable reading is now **opt-in per option** via `@option(env=...)`:
+  `env=True` uses a name from the class `env_var_template` (default
+  `"{name}_{option}"`, upper-cased), and `env="NAME"` sets an explicit name.
+  **Breaking:** the `envvar=` option argument and the `auto_env_vars` class
+  attribute are removed; add `env=` to each option that should read the
+  environment. The new `env_var_template` class attribute customises generated
+  names.
 - Replaced the single `@option(cli_only=True)` flag with two independent
   toggles: `@option(cli=False)` hides an option from the command line, and
   `@option(config=False)` stops it being loaded from TOML config files. The

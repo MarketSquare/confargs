@@ -75,7 +75,7 @@ class ConfigurationProcessor:
         env_values = collect_env_values(
             self.options,
             self.instance.tool_name,
-            auto_env_vars=self.instance.auto_env_vars,
+            template=self.instance.env_var_template,
             environ=self.environ,
         )
 
