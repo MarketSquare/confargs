@@ -116,8 +116,7 @@ class ConfigurationProcessor:
             passes += 1
             if passes > self._MAX_EAGER_PASSES:
                 raise CliUsageError(
-                    "eager option expansion exceeded its limit; "
-                    "check for a cyclic --argumentfile reference"
+                    "eager option expansion exceeded its limit; check for a cyclic --argumentfile reference"
                 )
             attr, raw, start, end = occurrence
             value_type = self.value_types[attr]

@@ -179,11 +179,7 @@ def test_version_exits(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> No
 def test_argumentfile_expands_options(tmp_path: Path) -> None:
     argfile = tmp_path / "args.robot"
     argfile.write_text(
-        "# common CI arguments\n"
-        "--name CI Suite\n"
-        "--include smoke\n"
-        "--variable ENV:ci\n"
-        "--dryrun\n",
+        "# common CI arguments\n--name CI Suite\n--include smoke\n--variable ENV:ci\n--dryrun\n",
         encoding="utf-8",
     )
 
