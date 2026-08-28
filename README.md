@@ -144,6 +144,14 @@ Release is published. It uses [PyPI Trusted Publishing](https://docs.pypi.org/tr
 (OIDC), so no API token is stored in the repository — configure the project as a
 trusted publisher on PyPI (workflow `publish.yml`, environment `pypi`) once.
 
+## Versioning
+
+argconfig follows [Semantic Versioning](https://semver.org/). The version is
+single-sourced from `__version__` in `src/argconfig/__init__.py` (hatchling reads
+it at build time). While the project is `0.x.y` the API is still stabilising, so
+minor releases may include breaking changes. Notable changes are recorded in
+[`CHANGELOG.md`](CHANGELOG.md).
+
 ## License
 
 MIT
