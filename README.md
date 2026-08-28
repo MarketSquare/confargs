@@ -78,6 +78,10 @@ CLI-only options:
 - `--no-config` — ignore config files entirely.
 - `--ignore-git` — keep searching above the `.git` project root.
 
+By default (`strict_config = True`) unknown keys — and any `cli_only` option —
+found in the config section raise an error, which catches typos early. Set
+`strict_config = False` on your class to silently ignore them instead.
+
 ### Environment variables
 
 Set a name per option with `@option(envvar="MYTOOL_LOG")`, or enable

@@ -11,13 +11,13 @@ from argconfig.base import ArgConfig
 from argconfig.cli import parse_cli
 from argconfig.coercion import coerce_value, resolve_value_type
 from argconfig.env_source import collect_env_values
-from argconfig.exceptions import MISSING, OptionValueError
+from argconfig.exceptions import MISSING, ConfigDiscoveryError, OptionValueError
 from argconfig.namespace import Namespace
 from argconfig.options import collect_options, resolve_names
 from argconfig.toml_source import (
     find_project_config_files,
     find_user_config_files,
-    first_section,
+    first_section_with_path,
 )
 
 if TYPE_CHECKING:
@@ -109,26 +109,43 @@ class ConfigurationProcessor:
 
         explicit = cli_values.get("config")
         if explicit:
-            nearest = first_section([Path(explicit)], section) or {}
-            return self._map_toml(nearest), {}
+            path, data = first_section_with_path([Path(explicit)], section)
+            return self._map_toml(data or {}, path), {}
 
         ignore_git = bool(cli_values.get("ignore_git"))
         project_files = find_project_config_files(self.cwd, config_names, ignore_git=ignore_git)
-        nearest = first_section(project_files, section) or {}
+        nearest_path, nearest = first_section_with_path(project_files, section)
 
         user_files = find_user_config_files(self.instance.tool_name, config_names)
-        user = first_section(user_files, section) or {}
-        return self._map_toml(nearest), self._map_toml(user)
+        user_path, user = first_section_with_path(user_files, section)
+        return (
+            self._map_toml(nearest or {}, nearest_path),
+            self._map_toml(user or {}, user_path),
+        )
 
-    def _map_toml(self, section: Mapping[str, Any]) -> dict[str, Any]:
-        """Map raw TOML keys to option attribute names, dropping cli-only keys."""
+    def _map_toml(self, section: Mapping[str, Any], path: Path | None) -> dict[str, Any]:
+        """Map raw TOML keys to option attribute names, dropping cli-only keys.
+
+        In strict mode, unknown keys and ``cli_only`` options are reported as
+        errors instead of being silently ignored.
+        """
         key_map = self._toml_key_map()
         mapped: dict[str, Any] = {}
+        invalid: list[str] = []
         for key, value in section.items():
             attr = key_map.get(key)
-            if attr is None or attr in self.cli_only:
+            if attr is None:
+                invalid.append(f"{key!r} (unknown option)")
+                continue
+            if attr in self.cli_only:
+                invalid.append(f"{key!r} (command-line only)")
                 continue
             mapped[attr] = value
+
+        if invalid and self.instance.strict_config:
+            location = f" in {path}" if path is not None else ""
+            joined = ", ".join(invalid)
+            raise ConfigDiscoveryError(f"invalid configuration keys{location}: {joined}")
         return mapped
 
     def _toml_key_map(self) -> dict[str, str]:
