@@ -117,6 +117,7 @@ into extra arguments, including nested argument files:
 ```python
 from argconfig import ArgConfig, option, read_argument_file
 
+
 class Args(ArgConfig):
     @option(names="--argumentfile/-A", cli_only=True, is_eager=True)
     def argumentfile(self, value: str | None = None) -> list[str] | None:
