@@ -1,25 +1,17 @@
-"""Ensure the shipped example stays importable and correct."""
+"""Ensure the shipped example / console entry-point stays correct."""
 
 from __future__ import annotations
 
-import importlib.util
 from pathlib import Path
 
+import pytest
+
 import argconfig
-
-EXAMPLE = Path(__file__).resolve().parent.parent / "examples" / "demo.py"
-
-
-def load_example():  # type: ignore[no-untyped-def]
-    spec = importlib.util.spec_from_file_location("argconfig_demo", EXAMPLE)
-    assert spec and spec.loader
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+from argconfig import demo
 
 
-def test_example_resolves_overrides(tmp_path: Path) -> None:
-    demo = load_example()
+def test_example_resolves_overrides(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)
     config = argconfig.ConfigurationProcessor(
         demo.MyArgs,
         argv=["--no-config", "-c", "quiet", "--retries", "5", "--log", "NONE"],
@@ -29,3 +21,24 @@ def test_example_resolves_overrides(tmp_path: Path) -> None:
     assert config.console == "quiet"
     assert config.retries == 5
     assert config.log is None
+
+
+def test_main_success_returns_zero(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    assert demo.main(["--no-config", "--console", "dotted"]) == 0
+
+
+def test_main_help_returns_zero(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    assert demo.main(["--help"]) == 0
+
+
+def test_main_invalid_value_returns_error_code(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    assert demo.main(["--no-config", "--console", "bogus"]) == 2
+
+
+def test_examples_wrapper_reexports_symbols() -> None:
+    wrapper = Path(__file__).resolve().parent.parent / "examples" / "demo.py"
+    assert wrapper.is_file()
+    assert "from argconfig.demo import" in wrapper.read_text(encoding="utf-8")

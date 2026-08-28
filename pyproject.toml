@@ -33,6 +33,9 @@ Homepage = "https://github.com/argconfig/argconfig"
 Repository = "https://github.com/argconfig/argconfig"
 Issues = "https://github.com/argconfig/argconfig/issues"
 
+[project.scripts]
+argconfig-demo = "argconfig.demo:main"
+
 [dependency-groups]
 dev = [
     "pytest>=8.0",
