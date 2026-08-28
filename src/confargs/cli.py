@@ -18,12 +18,12 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
-from argconfig.exceptions import CliUsageError
+from confargs.exceptions import CliUsageError
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    from argconfig.options import NameTable
+    from confargs.options import NameTable
 
 
 @dataclass
@@ -50,7 +50,7 @@ def _negated_flag_attr(name: str, table: NameTable, flags: set[str]) -> str | No
     """If ``name`` is a ``--no-<flag>`` negation of a known flag, return its attr."""
     if not name.startswith("--no-"):
         return None
-    base = f"--{name[len('--no-'):]}"
+    base = f"--{name[len('--no-') :]}"
     attr = table.long_to_attr.get(base)
     if attr is not None and attr in flags:
         return attr

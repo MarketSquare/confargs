@@ -1,22 +1,22 @@
-"""A Robot Framework-style CLI parser modelled with :mod:`argconfig`.
+"""A Robot Framework-style CLI parser modelled with :mod:`confargs`.
 
 This mirrors a representative subset of the real ``robot`` command-line
 interface — the option names, short flags, repeatable ("``*``") options, boolean
 switches, help text and the eager ``--argumentfile`` handling — so that the
-behaviour of argconfig can be exercised against realistic Robot Framework
+behaviour of confargs can be exercised against realistic Robot Framework
 command lines.
 
 Option help strings are lifted from Robot Framework's own usage text so the
 generated ``--help`` output reads like the tool it emulates. Only the light
 parsing/validation Robot Framework performs up front is reproduced here; the
-heavy lifting is intentionally left to argconfig's shared coercion path.
+heavy lifting is intentionally left to confargs's shared coercion path.
 """
 
 from __future__ import annotations
 
 import sys
 
-from argconfig import ArgConfig, Exit, OptionValueError, option, read_argument_file, split_argument_file
+from confargs import ArgConfig, Exit, OptionValueError, option, read_argument_file, split_argument_file
 
 CONSOLE_CHOICES = ("verbose", "dotted", "quiet", "none")
 LOG_LEVELS = ("TRACE", "DEBUG", "INFO", "WARN", "ERROR", "NONE")
@@ -28,7 +28,7 @@ class RobotArgs(ArgConfig):
     Usage: robot [options] data_sources
 
     Executes Robot Framework test/task data. This parser is a faithful subset
-    of the real command-line interface, rebuilt with argconfig.
+    of the real command-line interface, rebuilt with confargs.
     """
 
     name = "robot"
@@ -217,6 +217,6 @@ class RobotArgs(ArgConfig):
     def version(self, value: bool = False) -> bool:
         """Print version information and exit."""
         if value:
-            print("Robot Framework 7.0 (argconfig demo)")
+            print("Robot Framework 7.0 (confargs demo)")
             raise Exit(0)
         return value

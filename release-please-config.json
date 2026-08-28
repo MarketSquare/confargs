@@ -4,11 +4,11 @@
   "bump-minor-pre-major": true,
   "packages": {
     ".": {
-      "package-name": "argconfig",
+      "package-name": "confargs",
       "changelog-path": "CHANGELOG.md",
       "extra-files": [
         {
-          "path": "src/argconfig/__init__.py",
+          "path": "src/confargs/__init__.py",
           "type": "generic"
         }
       ]

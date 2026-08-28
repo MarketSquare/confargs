@@ -1,7 +1,7 @@
 """Runnable example wrapper.
 
-The implementation lives in :mod:`argconfig.demo` (installed as the
-``argconfig-demo`` console script). This file lets you run the same example
+The implementation lives in :mod:`confargs.demo` (installed as the
+``confargs-demo`` console script). This file lets you run the same example
 directly from a checkout:
 
     uv run python examples/demo.py --console quiet --retries 5
@@ -10,7 +10,7 @@ directly from a checkout:
 
 from __future__ import annotations
 
-from argconfig.demo import MyArgs, main
+from confargs.demo import MyArgs, main
 
 __all__ = ["MyArgs", "main"]
 

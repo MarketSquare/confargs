@@ -6,9 +6,9 @@ from pathlib import Path
 
 import pytest
 
-import argconfig
-from argconfig import ArgConfig, ConfigurationProcessor, Namespace, option
-from argconfig.exceptions import OptionValueError
+import confargs
+from confargs import ArgConfig, ConfigurationProcessor, Namespace, option
+from confargs.exceptions import OptionValueError
 
 
 class MyArgs(ArgConfig):
@@ -161,13 +161,13 @@ def test_explicit_config_path(tmp_path: Path) -> None:
 def test_cli_only_option_in_toml_is_rejected_when_strict(tmp_path: Path) -> None:
     # no_config is cli-only; setting it in TOML is an error under strict mode.
     write_pyproject(tmp_path, "[tool.mytool]\nno_config = true\nlog = 'toml.html'\n")
-    with pytest.raises(argconfig.ConfigDiscoveryError):
+    with pytest.raises(confargs.ConfigDiscoveryError):
         make([], cwd=tmp_path)
 
 
 def test_unknown_toml_key_rejected_when_strict(tmp_path: Path) -> None:
     write_pyproject(tmp_path, "[tool.mytool]\nnope = 1\n")
-    with pytest.raises(argconfig.ConfigDiscoveryError):
+    with pytest.raises(confargs.ConfigDiscoveryError):
         make([], cwd=tmp_path)
 
 
@@ -198,7 +198,7 @@ def test_explicit_config_skips_discovery(tmp_path: Path) -> None:
 
 
 def test_help_raises_exit(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
-    with pytest.raises(argconfig.Exit) as exc:
+    with pytest.raises(confargs.Exit) as exc:
         make(["--help"], cwd=tmp_path)
     assert exc.value.code == 0
     assert "My CLI tool" in capsys.readouterr().out

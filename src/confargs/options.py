@@ -1,6 +1,6 @@
 """The ``option`` decorator, the :class:`Option` descriptor and name handling.
 
-An option is declared as a *method* on an :class:`~argconfig.base.ArgConfig`
+An option is declared as a *method* on an :class:`~confargs.base.ArgConfig`
 subclass and decorated with :func:`option`. The method receives the raw value
 coming from whichever source supplied it (CLI, environment or TOML), validates
 and/or parses it, and returns the final value.
@@ -18,7 +18,7 @@ from dataclasses import dataclass, field
 from types import MethodType
 from typing import TYPE_CHECKING, Any, overload
 
-from argconfig.exceptions import MISSING, OptionDefinitionError
+from confargs.exceptions import MISSING, OptionDefinitionError
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -153,7 +153,7 @@ def option(
     envvar: str | None = None,
     is_eager: bool = False,
 ) -> Option | Callable[[OptionMethod], Option]:
-    """Mark a method as an argconfig option.
+    """Mark a method as an confargs option.
 
     Usable bare (``@option``) or with keyword arguments
     (``@option(names="--console/-c", cli_only=True, envvar="MY_CONSOLE")``).

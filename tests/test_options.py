@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import pytest
 
-import argconfig
-from argconfig import ArgConfig, Option, collect_options, option, resolve_names
-from argconfig.exceptions import MISSING, OptionDefinitionError
+import confargs
+from confargs import ArgConfig, Option, collect_options, option, resolve_names
+from confargs.exceptions import MISSING, OptionDefinitionError
 
 
 class Sample(ArgConfig):
@@ -164,6 +164,6 @@ def test_config_section_uses_default_section_override() -> None:
 
 
 def test_help_option_raises_exit_when_true() -> None:
-    with pytest.raises(argconfig.Exit) as exc:
+    with pytest.raises(confargs.Exit) as exc:
         Sample().help(True)
     assert exc.value.code == 0

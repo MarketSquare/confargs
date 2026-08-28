@@ -47,4 +47,4 @@ jobs:
       - name: Sync
         run: uv sync --python ${{ matrix.python-version }}
       - name: Run tests
-        run: uv run --python ${{ matrix.python-version }} pytest --cov=argconfig --cov-report=xml
+        run: uv run --python ${{ matrix.python-version }} pytest --cov=confargs --cov-report=xml

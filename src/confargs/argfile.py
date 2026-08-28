@@ -1,7 +1,7 @@
 """Helpers for reading *argument files* — text files that contain more options.
 
 This mirrors the well-known Robot Framework ``--argumentfile`` format so that an
-eager option (see :func:`argconfig.option`) can expand a file into extra CLI
+eager option (see :func:`confargs.option`) can expand a file into extra CLI
 tokens:
 
 * each line is stripped of surrounding whitespace,

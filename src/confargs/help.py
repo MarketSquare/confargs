@@ -6,13 +6,13 @@ import inspect
 from textwrap import shorten
 from typing import TYPE_CHECKING
 
-from argconfig.cli import negation_name
-from argconfig.coercion import resolve_value_type
-from argconfig.options import collect_options, resolve_names
+from confargs.cli import negation_name
+from confargs.coercion import resolve_value_type
+from confargs.options import collect_options, resolve_names
 
 if TYPE_CHECKING:
-    from argconfig.base import ArgConfig
-    from argconfig.options import NameTable, Option
+    from confargs.base import ArgConfig
+    from confargs.options import NameTable, Option
 
 _MAX_INVOCATION_WIDTH = 30
 

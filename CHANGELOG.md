@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to **argconfig** are documented here.
+All notable changes to **confargs** are documented here.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -11,12 +11,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Renamed the distribution and import package from `argconfig` to **`confargs`**
+  (the `argconfig` name was already taken on PyPI). The `ArgConfig` base class
+  keeps its name.
+
 ### Added
 
 - Eager options (`@option(is_eager=True)`): resolved before every other source,
   directly against `argv`. An eager option's method returns tokens that replace
   its own arguments, enabling argument-file expansion.
-- `argconfig.split_argument_file` / `argconfig.read_argument_file` helpers that
+- `confargs.split_argument_file` / `confargs.read_argument_file` helpers that
   parse Robot Framework-style argument files (comment lines, `name value` and
   `name=value` forms) into argv tokens, including nested argument files.
 
@@ -43,10 +49,10 @@ Initial development release.
   config section.
 - Environment-variable source via explicit `envvar=` or `auto_env_vars`.
 - Help generation from class and option docstrings; built-in `--help`.
-- `argconfig-demo` console entry-point and runnable example.
+- `confargs-demo` console entry-point and runnable example.
 - Tooling: uv project, ruff, mypy (strict), pytest, pre-commit, CI matrix
   (Python 3.10-3.13 on Linux and Windows) and a PyPI trusted-publishing
   workflow.
 
-[Unreleased]: https://github.com/argconfig/argconfig/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/argconfig/argconfig/releases/tag/v0.1.0
+[Unreleased]: https://github.com/MarketSquare/confargs/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/MarketSquare/confargs/releases/tag/v0.1.0

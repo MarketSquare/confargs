@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from argconfig import (
+from confargs import (
     ArgConfig,
     ConfigurationProcessor,
     OptionDefinitionError,
@@ -14,7 +14,7 @@ from argconfig import (
     read_argument_file,
     split_argument_file,
 )
-from argconfig.exceptions import CliUsageError
+from confargs.exceptions import CliUsageError
 
 
 class ArgFileConfig(ArgConfig):
