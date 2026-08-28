@@ -37,6 +37,21 @@ class ArgConfig:
             raise Exit(0)
         return value
 
+    @option(names="--config", cli_only=True)
+    def config(self, value: str | None = None) -> str | None:
+        """Read configuration from this file only, skipping discovery."""
+        return value
+
+    @option(names="--no-config", cli_only=True)
+    def no_config(self, value: bool = False) -> bool:
+        """Do not read any configuration file."""
+        return value
+
+    @option(names="--ignore-git", cli_only=True)
+    def ignore_git(self, value: bool = False) -> bool:
+        """Keep searching for config files above the project's .git directory."""
+        return value
+
     @property
     def config_section(self) -> tuple[str, ...]:
         """The TOML table path to read configuration from."""
