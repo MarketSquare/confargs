@@ -11,6 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Eager options (`@option(is_eager=True)`): resolved before every other source,
+  directly against `argv`. An eager option's method returns tokens that replace
+  its own arguments, enabling argument-file expansion.
+- `argconfig.split_argument_file` / `argconfig.read_argument_file` helpers that
+  parse Robot Framework-style argument files (comment lines, `name value` and
+  `name=value` forms) into argv tokens, including nested argument files.
+
 ## [0.1.0] - 2026-08-28
 
 Initial development release.

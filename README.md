@@ -106,6 +106,26 @@ built-in discovery options above are defined this way).
 - Boolean options can be negated on the command line: `--verbose` sets it to
   `True`, `--no-verbose` sets it to `False`.
 
+### Eager options and argument files
+
+Mark an option `is_eager=True` to resolve it *before* every other source,
+directly against `argv`. The method's return value — an iterable of tokens or
+`None` — replaces the option's own arguments, so it can inject more options.
+This is how an `--argumentfile` option expands a file (Robot Framework style)
+into extra arguments, including nested argument files:
+
+```python
+from argconfig import ArgConfig, option, read_argument_file
+
+class Args(ArgConfig):
+    @option(names="--argumentfile/-A", cli_only=True, is_eager=True)
+    def argumentfile(self, value: str | None = None) -> list[str] | None:
+        return read_argument_file(value) if value else None
+```
+
+`ConfigurationProcessor(Args, argv=[...])` accepts an explicit argument list;
+when omitted it falls back to `sys.argv[1:]`.
+
 ## Example
 
 A runnable example lives in [`examples/demo.py`](examples/demo.py) and is also

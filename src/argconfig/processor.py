@@ -11,7 +11,7 @@ from argconfig.base import ArgConfig
 from argconfig.cli import parse_cli
 from argconfig.coercion import coerce_value, resolve_value_type
 from argconfig.env_source import collect_env_values
-from argconfig.exceptions import MISSING, ConfigDiscoveryError, OptionValueError
+from argconfig.exceptions import MISSING, CliUsageError, ConfigDiscoveryError, OptionDefinitionError, OptionValueError
 from argconfig.namespace import Namespace
 from argconfig.options import collect_options, resolve_names
 from argconfig.toml_source import (
@@ -41,6 +41,8 @@ class ConfigurationProcessor:
     parsing and validation before being stored.
     """
 
+    _MAX_EAGER_PASSES = 1000
+
     def __init__(
         self,
         config: type[ArgConfig] | ArgConfig,
@@ -60,11 +62,13 @@ class ConfigurationProcessor:
         self.flags = {attr for attr, vt in self.value_types.items() if vt.is_flag}
         self.lists = {attr for attr, vt in self.value_types.items() if vt.is_list}
         self.cli_only = {attr for attr, opt in self.options.items() if opt.cli_only}
+        self.eager = {attr for attr, opt in self.options.items() if opt.is_eager}
         self.positionals: list[str] = []
 
     def process(self) -> Namespace:
         """Parse every source, merge them and return resolved values."""
-        cli_result = parse_cli(self.argv, self.table, self.flags, self.lists)
+        argv = self._expand_eager(self.argv)
+        cli_result = parse_cli(argv, self.table, self.flags, self.lists)
         self.positionals = cli_result.positionals
 
         nearest, user = self._load_toml(cli_result.values)
@@ -88,6 +92,95 @@ class ConfigurationProcessor:
             if attr in source:
                 return source[attr]
         return MISSING
+
+    def _expand_eager(self, argv: Sequence[str]) -> list[str]:
+        """Resolve eager options against ``argv`` before anything else.
+
+        Each eager option occurrence is located directly in ``argv`` and its
+        method is invoked with the coerced value. Whatever the method returns
+        (an iterable of tokens, or ``None``) replaces that option's own tokens
+        in ``argv``. This lets an ``--argumentfile`` option read a file and
+        splice its contents in place — repeatedly, so nested argument files are
+        expanded too. A guard bounds the number of expansions to catch cyclic
+        argument files.
+        """
+        expanded = list(argv)
+        if not self.eager:
+            return expanded
+
+        passes = 0
+        while True:
+            occurrence = self._scan_first_eager(expanded)
+            if occurrence is None:
+                return expanded
+            passes += 1
+            if passes > self._MAX_EAGER_PASSES:
+                raise CliUsageError(
+                    "eager option expansion exceeded its limit; "
+                    "check for a cyclic --argumentfile reference"
+                )
+            attr, raw, start, end = occurrence
+            value_type = self.value_types[attr]
+            value = True if value_type.is_flag else coerce_value(raw, value_type)
+            method = getattr(self.instance, attr)
+            result = method(value)
+            if isinstance(result, str):
+                display = self.table.attr_to_names.get(attr, [attr])[0]
+                raise OptionDefinitionError(
+                    f"eager option {display} must return an iterable of tokens or None, not a bare string"
+                )
+            injected = [str(token) for token in result] if result else []
+            expanded[start:end] = injected
+
+    def _scan_first_eager(self, argv: Sequence[str]) -> tuple[str, Any, int, int] | None:
+        """Find the first eager-option occurrence in ``argv``.
+
+        Returns ``(attr, raw_value, start, end)`` where ``argv[start:end]`` is
+        the span to replace, or ``None`` when no eager option remains. Option
+        parsing stops at a ``--`` terminator.
+        """
+        index = 0
+        while index < len(argv):
+            token = argv[index]
+            if token == "--":
+                return None
+            if token.startswith("--"):
+                found = self._scan_long_eager(argv, index, token)
+                if found is not None:
+                    return found
+            elif token.startswith("-") and token != "-":
+                found = self._scan_short_eager(argv, index, token)
+                if found is not None:
+                    return found
+            index += 1
+        return None
+
+    def _scan_long_eager(self, argv: Sequence[str], index: int, token: str) -> tuple[str, Any, int, int] | None:
+        name, sep, inline = token.partition("=")
+        attr = self.table.long_to_attr.get(name)
+        if attr not in self.eager:
+            return None
+        if attr in self.flags:
+            return attr, True, index, index + 1
+        if sep:
+            return attr, inline, index, index + 1
+        if index + 1 >= len(argv):
+            raise CliUsageError(f"option {name!r} expects a value")
+        return attr, argv[index + 1], index, index + 2
+
+    def _scan_short_eager(self, argv: Sequence[str], index: int, token: str) -> tuple[str, Any, int, int] | None:
+        name = token[:2]
+        attr = self.table.short_to_attr.get(name)
+        if attr not in self.eager:
+            return None
+        if attr in self.flags:
+            return attr, True, index, index + 1
+        attached = token[2:]
+        if attached:
+            return attr, attached, index, index + 1
+        if index + 1 >= len(argv):
+            raise CliUsageError(f"option {name!r} expects a value")
+        return attr, argv[index + 1], index, index + 2
 
     def _resolve(self, opt: Option, attr: str, raw: Any) -> Any:
         method = getattr(self.instance, attr)

@@ -6,6 +6,7 @@ Declare options as methods on an :class:`ArgConfig` subclass, decorate them with
 
 from __future__ import annotations
 
+from argconfig.argfile import read_argument_file, split_argument_file
 from argconfig.base import ArgConfig
 from argconfig.exceptions import (
     MISSING,
@@ -37,5 +38,7 @@ __all__ = [
     "__version__",
     "collect_options",
     "option",
+    "read_argument_file",
     "resolve_names",
+    "split_argument_file",
 ]
