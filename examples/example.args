@@ -1,0 +1,10 @@
+# Example argument file for examples/demo.py.
+#
+# Blank lines and lines starting with '#' are ignored. Each option is written
+# as it would appear on the command line, one per line. Run it with:
+#
+#     uv run python examples/demo.py -A examples/example.args
+#
+--who Ada
+--repeat 2
+--no-color

@@ -129,8 +129,20 @@ when omitted it falls back to `sys.argv[1:]`.
 
 ## Example
 
-A runnable example lives in [`examples/demo.py`](examples/demo.py) and is also
-installed as a console script (`confargs-demo`) via `[project.scripts]`:
+A complete, self-contained example lives in [`examples/demo.py`](examples/demo.py)
+(with a sample [`examples/example.args`](examples/example.args) and
+[`examples/README.md`](examples/README.md)). It's a single copy-pasteable file
+showing value options, `--no-` flag negation, environment variables and an
+eager `--argumentfile`. Run it from a checkout without installing anything:
+
+```bash
+uv run python examples/demo.py --who Ada --repeat 3
+uv run python examples/demo.py -A examples/example.args
+uv run python examples/demo.py --help
+```
+
+Separately, the packaged [`confargs.demo`](src/confargs/demo.py) module is
+installed as the `confargs-demo` console script via `[project.scripts]`:
 
 ```bash
 uv run confargs-demo --console quiet --retries 5

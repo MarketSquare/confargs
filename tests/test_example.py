@@ -2,12 +2,26 @@
 
 from __future__ import annotations
 
+import importlib.util
 from pathlib import Path
+from types import ModuleType
 
 import pytest
 
 import confargs
 from confargs import demo
+
+EXAMPLES_DIR = Path(__file__).resolve().parent.parent / "examples"
+
+
+def _load_example() -> ModuleType:
+    """Import ``examples/demo.py`` by path so the example is actually executed."""
+    path = EXAMPLES_DIR / "demo.py"
+    spec = importlib.util.spec_from_file_location("confargs_example_demo", path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def test_example_resolves_overrides(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -38,7 +52,29 @@ def test_main_invalid_value_returns_error_code(tmp_path: Path, monkeypatch: pyte
     assert demo.main(["--no-config", "--console", "bogus"]) == 2
 
 
-def test_examples_wrapper_reexports_symbols() -> None:
-    wrapper = Path(__file__).resolve().parent.parent / "examples" / "demo.py"
-    assert wrapper.is_file()
-    assert "from confargs.demo import" in wrapper.read_text(encoding="utf-8")
+def test_example_runs_and_greets(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    example = _load_example()
+    assert example.main(["--no-config", "--who", "Ada", "--repeat", "2", "--no-color"]) == 0
+    out = capsys.readouterr().out
+    assert out.count("Hello, Ada!") == 2
+    assert "\033[" not in out  # --no-color disabled the color codes
+
+
+def test_example_reads_argument_file(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    example = _load_example()
+    argfile = EXAMPLES_DIR / "example.args"
+    assert example.main(["--no-config", "-A", str(argfile)]) == 0
+    out = capsys.readouterr().out
+    # example.args sets --who Ada --repeat 2 --no-color
+    assert out.count("Hello, Ada!") == 2
+    assert "\033[" not in out
