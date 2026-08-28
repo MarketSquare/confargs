@@ -9,6 +9,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > stabilising. Minor (`0.X.0`) releases may include breaking changes; patch
 > (`0.x.Y`) releases are reserved for backwards-compatible fixes.
 
+## [0.2.0](https://github.com/MarketSquare/confargs/compare/v0.1.0...v0.2.0) (2026-08-28)
+
+
+### Features
+
+* add argconfig-demo console entry-point ([d0249d8](https://github.com/MarketSquare/confargs/commit/d0249d83c0d37ab1e71d10ef41d4a9d79ad80b0a))
+* add ConfigurationProcessor, Namespace and discovery controls ([8395145](https://github.com/MarketSquare/confargs/commit/83951450a7b9b81d6f47bb72cd2b0da64f61a373))
+* add core option model and ArgConfig base ([a5e1c4d](https://github.com/MarketSquare/confargs/commit/a5e1c4d15c0bc6a4d1a4ce79a7cd69a12c6361a5))
+* add eager options and argument-file expansion ([b6837bd](https://github.com/MarketSquare/confargs/commit/b6837bd4fda7c10efccb4bacd5fab420475ca7f9))
+* add environment-variable source ([8b34439](https://github.com/MarketSquare/confargs/commit/8b34439eb153be00fd443eff0dcaba4ced96b4f2))
+* add minimal command-line tokenizer ([e2c07bd](https://github.com/MarketSquare/confargs/commit/e2c07bd00c4ea8b3cb4f793b37b041dbce90ffd0))
+* add TOML loading and config file discovery ([3e8171c](https://github.com/MarketSquare/confargs/commit/3e8171c18b3da3e49b658453fb7dc1a785ddfddf))
+* add type resolution and value coercion ([3976797](https://github.com/MarketSquare/confargs/commit/397679794170b008feb256d320b72022069c0450))
+* generate help text from docstrings ([13cd88c](https://github.com/MarketSquare/confargs/commit/13cd88c1738ebc480ef2575072140b431f70294a))
+* support boolean flag negation with --no- prefix ([3d44e05](https://github.com/MarketSquare/confargs/commit/3d44e05746bfa050dbb436160b61c83564b21aab))
+* validate config keys with strict_config mode ([f707858](https://github.com/MarketSquare/confargs/commit/f7078587200155f8122c725f9dc8b30fa4cec64e))
+
+
+### Documentation
+
+* add publishing workflow, example and expanded README ([6f266d8](https://github.com/MarketSquare/confargs/commit/6f266d88cebdd66f55833eae7badecb0ab837cae))
+* make examples/ a self-contained runnable example ([73a0948](https://github.com/MarketSquare/confargs/commit/73a094831a85cd0e86a00b570fd03e2f4cbc608d))
+
+
+### Build System
+
+* single-source version and add CHANGELOG ([690efd9](https://github.com/MarketSquare/confargs/commit/690efd9b7017270a262ab13d75641891c73ca959))
+
 ## [Unreleased]
 
 ### Changed
