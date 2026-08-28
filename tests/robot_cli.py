@@ -9,7 +9,9 @@ command lines.
 Option help strings are lifted from Robot Framework's own usage text so the
 generated ``--help`` output reads like the tool it emulates. Only the light
 parsing/validation Robot Framework performs up front is reproduced here; the
-heavy lifting is intentionally left to confargs's shared coercion path.
+heavy lifting is intentionally left to confargs's shared coercion path. Options
+that need no parsing or validation are declared in the short attribute form
+(``name_ = option(...)``); the rest use decorated methods.
 """
 
 from __future__ import annotations
@@ -47,17 +49,22 @@ class RobotArgs(ArgConfig):
         return read_argument_file(value)
 
     # --- Suite / test selection --------------------------------------------
-    @option(name="name", short="N")
-    def name_(self, value: str | None = None) -> str | None:
-        """Set the name of the top level suite. By default the name is created
-        based on the executed file or directory.
-        """
-        return value
+    # Pure pass-through options (no parsing/validation) are declared as plain
+    # attributes rather than methods.
+    name_ = option(
+        name="name",
+        short="N",
+        default=None,
+        help="Set the name of the top level suite. By default the name is "
+        "created based on the executed file or directory.",
+    )
 
-    @option(name="doc", short="D")
-    def doc(self, value: str | None = None) -> str | None:
-        """Set the documentation of the top level suite."""
-        return value
+    doc = option(
+        name="doc",
+        short="D",
+        default=None,
+        help="Set the documentation of the top level suite.",
+    )
 
     @option(name="metadata", short="M")
     def metadata(self, value: list[str] | None = None) -> list[str]:
@@ -111,17 +118,20 @@ class RobotArgs(ArgConfig):
         return value or []
 
     # --- Output files -------------------------------------------------------
-    @option(name="outputdir", short="d")
-    def outputdir(self, value: str = ".") -> str:
-        """Where to create output files. The default is the directory where
-        tests are run from and the given path is considered relative to that.
-        """
-        return value
+    outputdir = option(
+        name="outputdir",
+        short="d",
+        default=".",
+        help="Where to create output files. The default is the directory where "
+        "tests are run from and the given path is considered relative to that.",
+    )
 
-    @option(name="output", short="o")
-    def output(self, value: str = "output.xml") -> str:
-        """XML output file."""
-        return value
+    output = option(
+        name="output",
+        short="o",
+        default="output.xml",
+        help="XML output file.",
+    )
 
     @option(name="log", short="l")
     def log(self, value: str | None = "log.html") -> str | None:
@@ -139,12 +149,12 @@ class RobotArgs(ArgConfig):
             return None
         return value
 
-    @option(name="xunit", short="x")
-    def xunit(self, value: str | None = None) -> str | None:
-        """xUnit compatible result file. Not created unless this option is
-        specified.
-        """
-        return value
+    xunit = option(
+        name="xunit",
+        short="x",
+        default=None,
+        help="xUnit compatible result file. Not created unless this option is specified.",
+    )
 
     @option(name="loglevel", short="L")
     def loglevel(self, value: str = "INFO") -> str:
@@ -158,34 +168,36 @@ class RobotArgs(ArgConfig):
         return value
 
     # --- Execution switches -------------------------------------------------
-    @option(name="dryrun")
-    def dryrun(self, value: bool = False) -> bool:
-        """Verifies test data and runs tests so that library keywords are not
-        executed.
-        """
-        return value
+    dryrun = option(
+        name="dryrun",
+        default=False,
+        help="Verifies test data and runs tests so that library keywords are not executed.",
+    )
 
-    @option(name="exitonfailure", short="X")
-    def exitonfailure(self, value: bool = False) -> bool:
-        """Stops test execution if any critical test fails."""
-        return value
+    exitonfailure = option(
+        name="exitonfailure",
+        short="X",
+        default=False,
+        help="Stops test execution if any critical test fails.",
+    )
 
     @option(name="skiponfailure")
     def skiponfailure(self, value: list[str] | None = None) -> list[str]:
         """Tests having given tag will be skipped if they fail."""
         return value or []
 
-    @option(name="rpa")
-    def rpa(self, value: bool = False) -> bool:
-        """Turn on the generic automation mode. Negate with --no-rpa."""
-        return value
+    rpa = option(
+        name="rpa",
+        default=False,
+        help="Turn on the generic automation mode. Negate with --no-rpa.",
+    )
 
-    @option(name="statusrc")
-    def statusrc(self, value: bool = True) -> bool:
-        """Set the return code to zero regardless of failures with --no-statusrc.
-        Error codes are returned normally.
-        """
-        return value
+    statusrc = option(
+        name="statusrc",
+        default=True,
+        help="Set the return code to zero regardless of failures with "
+        "--no-statusrc. Error codes are returned normally.",
+    )
 
     @option(name="console")
     def console(self, value: str = "verbose") -> str:
@@ -196,15 +208,18 @@ class RobotArgs(ArgConfig):
             raise OptionValueError(f"invalid --console value {value!r}; choose from {', '.join(CONSOLE_CHOICES)}")
         return value
 
-    @option(name="dotted", short=".")
-    def dotted(self, value: bool = False) -> bool:
-        """Shortcut for `--console dotted`."""
-        return value
+    dotted = option(
+        name="dotted",
+        short=".",
+        default=False,
+        help="Shortcut for `--console dotted`.",
+    )
 
-    @option(name="quiet")
-    def quiet(self, value: bool = False) -> bool:
-        """Shortcut for `--console quiet`."""
-        return value
+    quiet = option(
+        name="quiet",
+        default=False,
+        help="Shortcut for `--console quiet`.",
+    )
 
     @option(name="pythonpath", short="P")
     def pythonpath(self, value: list[str] | None = None) -> list[str]:
