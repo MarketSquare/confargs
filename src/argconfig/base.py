@@ -33,7 +33,9 @@ class ArgConfig:
     def help(self, value: bool = False) -> bool:
         """Show this help message and exit."""
         if value:
-            print(self.__doc__ or "")
+            from argconfig.help import format_help
+
+            print(format_help(self))
             raise Exit(0)
         return value
 
