@@ -1,8 +1,9 @@
 name: Publish
 
+# Automated releases are handled by release-please (.github/workflows/release-please.yml),
+# which builds and publishes on release creation. This workflow is a manual
+# fallback for publishing a release out-of-band.
 on:
-  release:
-    types: [published]
   workflow_dispatch:
 
 jobs:
