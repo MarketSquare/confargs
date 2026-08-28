@@ -20,7 +20,7 @@ from argconfig.namespace import Namespace
 from argconfig.options import Option, collect_options, option, resolve_names
 from argconfig.processor import ConfigurationProcessor
 
-__version__ = "0.1.0"
+__version__ = "0.1.0"  # x-release-please-version
 
 __all__ = [
     "MISSING",

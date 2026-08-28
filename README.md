@@ -152,6 +152,13 @@ it at build time). While the project is `0.x.y` the API is still stabilising, so
 minor releases may include breaking changes. Notable changes are recorded in
 [`CHANGELOG.md`](CHANGELOG.md).
 
+Releases are automated with
+[release-please](https://github.com/googleapis/release-please): merging
+[Conventional Commits](https://www.conventionalcommits.org/) to `main` keeps an
+open release PR that bumps `__version__`, updates the changelog and, once merged,
+tags the release and publishes to PyPI. Pre-1.0, breaking changes bump the minor
+version (`bump-minor-pre-major`).
+
 ## License
 
 MIT
