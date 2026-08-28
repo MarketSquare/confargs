@@ -55,6 +55,12 @@ def test_help_flag_has_no_metavar() -> None:
     assert "VERBOSE" not in lines[0]
 
 
+def test_help_shows_flag_negation() -> None:
+    text = format_help(Tool())
+    lines = [line for line in text.splitlines() if "--verbose" in line]
+    assert any("--no-verbose" in line for line in lines)
+
+
 def test_help_list_option_metavar_has_ellipsis() -> None:
     text = format_help(Tool())
     assert "--tags TAGS..." in text

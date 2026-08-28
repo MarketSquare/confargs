@@ -239,3 +239,20 @@ def test_required_option_without_default_raises(tmp_path: Path) -> None:
 
     with pytest.raises(OptionValueError):
         ConfigurationProcessor(R, argv=[], environ={}, cwd=tmp_path).process()
+
+
+def test_flag_negation_overrides_toml_true(tmp_path: Path) -> None:
+    class Flags(ArgConfig):
+        name = "flags"
+
+        @option
+        def color(self, value: bool = True) -> bool:
+            return value
+
+    (tmp_path / "pyproject.toml").write_text("[tool.flags]\ncolor = true\n", encoding="utf-8")
+
+    default_cfg = ConfigurationProcessor(Flags, argv=[], environ={}, cwd=tmp_path).process()
+    assert default_cfg.color is True
+
+    negated = ConfigurationProcessor(Flags, argv=["--no-color"], environ={}, cwd=tmp_path).process()
+    assert negated.color is False
