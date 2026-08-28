@@ -2,9 +2,10 @@
 
 Unlike the packaged ``confargs-demo`` console script (which lives in
 ``confargs.demo``), this file is a complete, copy-pasteable tool: everything a
-reader needs is in one place. It demonstrates the main features in one go —
-value options, a repeatable flag with ``--no-`` negation, environment variables
-and an eager ``--argumentfile``.
+reader needs is in one place. It demonstrates the main features in one go — a
+declarative ``option(...)`` attribute alongside method-based options, a
+repeatable flag with ``--no-`` negation, environment variables and an eager
+``--argumentfile``.
 
 Run it directly from a checkout, no install required::
 
@@ -29,6 +30,11 @@ class Greeter(ArgConfig):
     """greeter - a tiny self-contained CLI built with confargs."""
 
     name = "greeter"
+
+    # Declarative option: when there is nothing to parse or validate, an option
+    # can be declared as a plain attribute — no method needed. The value passes
+    # straight through coercion.
+    greeting = confargs.option(name="greeting", default="Hello", help="Greeting word to use.")
 
     @confargs.option(name="argumentfile", short="A", config=False, is_eager=True)
     def argumentfile(self, value: str | None = None) -> list[str] | None:
@@ -63,7 +69,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"error: {error}")
         return 2
 
-    greeting = f"Hello, {config.who}!"
+    greeting = f"{config.greeting}, {config.who}!"
     if config.color:
         greeting = f"\033[36m{greeting}\033[0m"
     for _ in range(config.repeat):

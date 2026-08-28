@@ -33,6 +33,10 @@ class MyArgs(ArgConfig):
 
     name = "mytool"
 
+    # Declarative option (no method): a simple value that needs no custom
+    # parsing can be declared as a plain attribute.
+    title = confargs.option(name="title", default="report", help="Title used in the output header.")
+
     @confargs.option(env=True)
     def log(self, value: str | None = "log.html") -> str | None:
         """HTML log file. Disable with the special value 'NONE'."""
@@ -66,6 +70,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"error: {error}")
         return 2
 
+    print("title   =", config.title)
     print("log     =", config.log)
     print("console =", config.console)
     print("retries =", config.retries)

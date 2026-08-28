@@ -47,10 +47,13 @@ class Option:
 
     def __init__(
         self,
-        func: OptionMethod,
+        func: OptionMethod | None = None,
         *,
         name: str | None = None,
         short: str | None = None,
+        help: str | None = None,
+        default: Any = MISSING,
+        type: Any = MISSING,
         cli: bool = True,
         config: bool = True,
         env: bool | str = False,
@@ -59,11 +62,14 @@ class Option:
         self.func = func
         self.explicit_name = name
         self.explicit_short = short
+        self.explicit_help = help
+        self.declared_default = default
+        self.declared_type = type
         self.cli = cli
         self.config = config
         self.env = env
         self.is_eager = is_eager
-        self.attr_name: str = func.__name__
+        self.attr_name: str = func.__name__ if func is not None else (name or "")
         # Names the option *wants*; short-name collisions are resolved later.
         self.long_names: list[str] = []
         self.explicit_shorts: list[str] = []
@@ -74,17 +80,44 @@ class Option:
         self.attr_name = name
         self._derive_default_names()
 
+    def __call__(self, func: OptionMethod) -> Option:
+        """Bind a method to a decorator-created option.
+
+        This lets ``@option(name=...)`` and the declarative
+        ``attr = option(name=...)`` share one code path: the former simply
+        invokes the returned :class:`Option` on the decorated method.
+        """
+        if self.func is not None:
+            raise OptionDefinitionError(f"option {self.attr_name!r} already has a method bound")
+        self.func = func
+        if self.explicit_name is None:
+            self.attr_name = func.__name__
+        self._derive_default_names()
+        return self
+
     def __get__(self, instance: object, owner: type | None = None) -> Any:
         if instance is None:
             return self
+        if self.func is None:
+            # A declarative option has no user method: the value passes through
+            # coercion unchanged.
+            return lambda value: value
         return MethodType(self.func, instance)
 
     def _derive_default_names(self) -> None:
-        # Long name: explicit ``name`` wins, otherwise derive from the method.
+        # Long name: explicit ``name`` wins, otherwise derive from the method
+        # (or, for a declarative option, the class attribute) name.
         if self.explicit_name is not None:
             long = _normalise_long(self.explicit_name)
-        else:
+        elif self.attr_name:
             long = f"--{self.attr_name.replace('_', '-')}"
+        else:
+            # A declarative option before ``__set_name__`` has run: names are
+            # filled in once the attribute is bound to its class.
+            self.long_names = []
+            self.explicit_shorts = []
+            self.auto_short = None
+            return
         self.long_names = [long]
 
         # Short name: explicit ``short`` wins. Otherwise auto-derive from the
@@ -101,11 +134,16 @@ class Option:
 
     @property
     def doc(self) -> str:
+        if self.func is None:
+            return (self.explicit_help or "").strip()
         return inspect.getdoc(self.func) or ""
 
     @property
     def value_parameter(self) -> inspect.Parameter:
         """The parameter that receives the incoming value (after ``self``)."""
+        if self.func is None:
+            msg = f"declarative option {self.attr_name!r} has no value parameter"
+            raise OptionDefinitionError(msg)
         params = list(inspect.signature(self.func).parameters.values())
         candidates = [p for p in params if p.name != "self"]
         if not candidates:
@@ -116,6 +154,8 @@ class Option:
     @property
     def default(self) -> Any:
         """The option's default value, or :data:`MISSING` if none is declared."""
+        if self.func is None:
+            return self.declared_default
         param = self.value_parameter
         if param.default is inspect.Parameter.empty:
             return MISSING
@@ -123,6 +163,8 @@ class Option:
 
     @property
     def raw_annotation(self) -> Any:
+        if self.func is None:
+            return self.declared_type
         param = self.value_parameter
         if param.annotation is inspect.Parameter.empty:
             return MISSING
@@ -145,11 +187,14 @@ def option(
     *,
     name: str | None = ...,
     short: str | None = ...,
+    help: str | None = ...,
+    default: Any = ...,
+    type: Any = ...,
     cli: bool = ...,
     config: bool = ...,
     env: bool | str = ...,
     is_eager: bool = ...,
-) -> Callable[[OptionMethod], Option]: ...
+) -> Option: ...
 
 
 def option(
@@ -157,24 +202,42 @@ def option(
     *,
     name: str | None = None,
     short: str | None = None,
+    help: str | None = None,
+    default: Any = MISSING,
+    type: Any = MISSING,
     cli: bool = True,
     config: bool = True,
     env: bool | str = False,
     is_eager: bool = False,
-) -> Option | Callable[[OptionMethod], Option]:
-    """Mark a method as an confargs option.
+) -> Option:
+    """Declare an confargs option.
 
-    Usable bare (``@option``) or with keyword arguments
-    (``@option(name="console", short="c", config=False, env=True)``).
+    There are three equivalent spellings:
+
+    * as a bare decorator, ``@option``;
+    * as a decorator with keyword arguments,
+      ``@option(name="console", short="c", config=False, env=True)``; and
+    * as a plain class attribute (no method),
+      ``console = option(name="console", help="Console output mode")`` — a
+      *declarative* option whose value passes straight through coercion.
 
     Args:
         name: The long option name, without leading dashes (e.g. ``"console"``
-            gives ``--console``). When omitted it is derived from the method
-            name (underscores become dashes).
+            gives ``--console``). When omitted it is derived from the method or
+            attribute name (underscores become dashes).
         short: The short option name, e.g. ``"c"`` gives ``-c``. When omitted a
             short name is auto-derived from the first letter of the long name —
             but only if ``name`` was not given explicitly; passing ``name``
             opts out of the implicit short.
+        help: Help text for a declarative option (an option declared without a
+            method). Ignored for decorated options, which use the method's
+            docstring instead.
+        default: Default value for a declarative option. A ``bool`` default
+            makes the option a flag; a ``None`` default makes the value
+            optional (``str | None``).
+        type: Explicit value type for a declarative option (e.g. ``int`` or
+            ``list[str]``). When omitted the type is inferred from ``default``
+            and otherwise falls back to ``str``.
         cli: When false, the option is not exposed on the command line (it has
             no CLI names and is skipped in ``--help``). Use for options that
             should only come from config files or the environment.
@@ -194,12 +257,19 @@ def option(
             ``--argumentfile`` option expands a file into more options.
     """
 
-    def wrap(f: OptionMethod) -> Option:
-        return Option(f, name=name, short=short, cli=cli, config=config, env=env, is_eager=is_eager)
-
-    if func is not None:
-        return wrap(func)
-    return wrap
+    opt = Option(
+        func,
+        name=name,
+        short=short,
+        help=help,
+        default=default,
+        type=type,
+        cli=cli,
+        config=config,
+        env=env,
+        is_eager=is_eager,
+    )
+    return opt
 
 
 @dataclass

@@ -46,7 +46,10 @@ class ValueType:
 
 
 def resolve_value_type(option: Option) -> ValueType:
-    """Inspect an option method and describe the type its value expects."""
+    """Inspect an option and describe the type its value expects."""
+    if option.func is None:
+        return _resolve_declarative(option)
+
     annotation = option.raw_annotation
     if annotation is MISSING:
         return ValueType(base=str)
@@ -54,6 +57,25 @@ def resolve_value_type(option: Option) -> ValueType:
     hints = typing.get_type_hints(option.func)
     hint = hints.get(option.value_parameter.name, str)
     return _analyse(hint)
+
+
+def _resolve_declarative(option: Option) -> ValueType:
+    """Describe the value type of a declarative option (one without a method).
+
+    An explicit ``type=`` wins; otherwise the type is inferred from the
+    declared ``default`` (a ``bool`` default becomes a flag, ``None`` makes the
+    value optional), falling back to ``str``.
+    """
+    if option.raw_annotation is not MISSING:
+        return _analyse(option.raw_annotation)
+    default = option.default
+    if isinstance(default, bool):
+        return ValueType(base=bool)
+    if default is None:
+        return ValueType(base=str, allows_none=True)
+    if default is not MISSING:
+        return _analyse(type(default))
+    return ValueType(base=str)
 
 
 def _analyse(hint: Any) -> ValueType:

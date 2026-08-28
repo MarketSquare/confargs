@@ -28,6 +28,9 @@ class MyArgs(ArgConfig):
 
     name = "mytool"
 
+    # Declarative option: no method needed when there's nothing to parse.
+    title = confargs.option(name="title", default="report", help="Report title.")
+
     @confargs.option
     def log(self, value: str | None = "log.html") -> str | None:
         """HTML log file. Disable with the special value 'NONE'."""
@@ -44,8 +47,20 @@ class MyArgs(ArgConfig):
 
 
 config = confargs.ConfigurationProcessor(MyArgs).process()
-print(config.log, config.console)
+print(config.title, config.log, config.console)
 ```
+
+## Declaring options
+
+Options come in two flavours:
+
+- **Method-based** (`@confargs.option`): the decorated method receives the raw
+  value and returns the parsed/validated result. Use this whenever you need to
+  transform or validate the value.
+- **Declarative** (`attr = confargs.option(name=..., help=...)`): a plain class
+  attribute with no method, for simple values that need no custom handling. The
+  value passes straight through coercion. Set `default=` (a `bool` makes it a
+  flag, `None` makes it optional) and `type=` to control the value type.
 
 ## Precedence
 

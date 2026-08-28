@@ -204,3 +204,95 @@ def test_help_option_raises_exit_when_true() -> None:
     with pytest.raises(confargs.Exit) as exc:
         Sample().help(True)
     assert exc.value.code == 0
+
+
+class Declared(ArgConfig):
+    """A tool using declarative (method-less) options."""
+
+    name = "declared"
+    config_names: list[str] = []  # noqa: RUF012
+
+    foo = option(name="foo", help="Foo doc", default="")
+    count = option(name="count", default=3)
+    verbose = option(name="verbose", short="V", default=False)
+    tag = option(name="tag", default=None)
+
+
+def test_declarative_option_is_an_option() -> None:
+    assert isinstance(Declared.__dict__["foo"], Option)
+    assert Declared.__dict__["foo"].func is None
+
+
+def test_declarative_option_derives_name_from_attribute() -> None:
+    class T(ArgConfig):
+        dry_run = option(help="Dry run.", default=False)
+
+    opt = T.__dict__["dry_run"]
+    assert opt.long_names == ["--dry-run"]
+
+
+def test_declarative_descriptor_returns_identity_on_instance() -> None:
+    passthrough = Declared().foo
+    assert passthrough("hello") == "hello"
+
+
+def test_declarative_help_text_used_as_doc() -> None:
+    assert Declared.__dict__["foo"].doc == "Foo doc"
+
+
+def test_declarative_default_and_type_inference() -> None:
+    from confargs.coercion import resolve_value_type
+
+    assert Declared.__dict__["count"].default == 3
+    assert resolve_value_type(Declared.__dict__["count"]).base is int
+    assert resolve_value_type(Declared.__dict__["verbose"]).is_flag is True
+    tag_type = resolve_value_type(Declared.__dict__["tag"])
+    assert tag_type.base is str
+    assert tag_type.allows_none is True
+
+
+def test_declarative_explicit_type_wins() -> None:
+    class T(ArgConfig):
+        nums = option(name="nums", type=list[int], default=None)
+
+    from confargs.coercion import resolve_value_type
+
+    vt = resolve_value_type(T.__dict__["nums"])
+    assert vt.is_list is True
+    assert vt.base is int
+
+
+def test_declarative_options_process_end_to_end() -> None:
+    config = confargs.ConfigurationProcessor(Declared, argv=["--foo", "hi", "--count", "7", "--verbose"]).process()
+    assert config.foo == "hi"
+    assert config.count == 7
+    assert config.verbose is True
+    assert config.tag is None
+
+
+def test_declarative_flag_negation() -> None:
+    class T(ArgConfig):
+        name = "t"
+        config_names: list[str] = []  # noqa: RUF012
+        color = option(name="color", short="C", default=True)
+
+    config = confargs.ConfigurationProcessor(T, argv=["--no-color"]).process()
+    assert config.color is False
+
+
+def test_decorator_with_kwargs_binds_method() -> None:
+    # ``@option(name=...)`` builds a method-less Option and then binds the
+    # decorated method via ``__call__``; the result is still an Option.
+    console = Sample.__dict__["console"]
+    assert console.func is not None
+    assert Sample().console("quiet") == "quiet"
+
+
+def test_double_binding_raises() -> None:
+    def method(self: object, value: str = "") -> str:
+        return value
+
+    opt = option(name="x")
+    opt(method)
+    with pytest.raises(OptionDefinitionError):
+        opt(method)

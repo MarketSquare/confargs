@@ -39,6 +39,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Options can now be declared **without a method**, as a plain class attribute:
+  `title = option(name="title", default="report", help="Report title.")`. Such
+  declarative options pass their value straight through coercion — use them for
+  simple values that need no custom parsing or validation. `default=` sets the
+  default (a `bool` makes it a flag, `None` makes it optional) and `type=`
+  overrides the inferred value type. Method-based `@option` declarations are
+  unchanged.
+
 ### Changed
 
 - Reworked option naming: `@option` now takes `name=` (the long option name,
