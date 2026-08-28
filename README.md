@@ -103,6 +103,8 @@ built-in discovery options above are defined this way).
   a flag; `list[...]` becomes a repeatable option; `int`/`float`/`str` are
   coerced from strings. Your method receives the coerced value and returns the
   final one — raise `argconfig.OptionValueError` to reject it.
+- Boolean options can be negated on the command line: `--verbose` sets it to
+  `True`, `--no-verbose` sets it to `False`.
 
 ## Example
 

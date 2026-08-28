@@ -6,6 +6,7 @@ import inspect
 from textwrap import shorten
 from typing import TYPE_CHECKING
 
+from argconfig.cli import negation_name
 from argconfig.coercion import resolve_value_type
 from argconfig.options import collect_options, resolve_names
 
@@ -33,6 +34,11 @@ def _metavar(attr: str, opt: Option) -> str:
 
 def _invocation(attr: str, opt: Option, table: NameTable) -> str:
     names = _order_names(table.attr_to_names.get(attr, [f"--{attr}"]))
+    vt = resolve_value_type(opt)
+    if vt.is_flag:
+        longs = [n for n in names if n.startswith("--")]
+        if longs and not longs[0].startswith("--no-"):
+            names = [*names, negation_name(longs[0])]
     return ", ".join(names) + _metavar(attr, opt)
 
 

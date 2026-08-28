@@ -8,6 +8,7 @@ TOML). Supported forms:
 * ``--long value`` and ``--long=value``
 * ``-s value``, ``-svalue`` (attached) and combined flags ``-abc``
 * boolean flags: ``--flag`` / ``-f`` (and ``--flag=false``)
+* boolean negation: ``--no-flag`` sets a boolean option to ``False``
 * ``--`` terminates option parsing; the rest are positionals
 * a lone ``-`` is treated as a positional (stdin convention)
 """
@@ -38,6 +39,22 @@ def _store(result: CliResult, attr: str, value: Any, list_opts: set[str]) -> Non
         result.values.setdefault(attr, []).append(value)
     else:
         result.values[attr] = value
+
+
+def negation_name(long_name: str) -> str:
+    """Return the ``--no-`` negation form of a long option name."""
+    return f"--no-{long_name[2:]}"
+
+
+def _negated_flag_attr(name: str, table: NameTable, flags: set[str]) -> str | None:
+    """If ``name`` is a ``--no-<flag>`` negation of a known flag, return its attr."""
+    if not name.startswith("--no-"):
+        return None
+    base = f"--{name[len('--no-'):]}"
+    attr = table.long_to_attr.get(base)
+    if attr is not None and attr in flags:
+        return attr
+    return None
 
 
 def parse_cli(
@@ -99,6 +116,12 @@ def _handle_long(
     name, sep, inline = token.partition("=")
     attr = table.long_to_attr.get(name)
     if attr is None:
+        negated = _negated_flag_attr(name, table, flags)
+        if negated is not None:
+            if sep:
+                raise CliUsageError(f"option {name!r} does not take a value")
+            _store(result, negated, False, list_opts)
+            return index
         raise CliUsageError(f"unknown option {name!r}")
 
     if attr in flags:

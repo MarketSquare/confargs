@@ -120,3 +120,37 @@ def test_missing_value_when_followed_by_option_raises() -> None:
 
 def test_value_that_looks_like_negative_is_consumed() -> None:
     assert run(["--log", "NONE"]).values == {"log": "NONE"}
+
+
+def test_flag_negation_sets_false() -> None:
+    assert run(["--no-verbose"]).values == {"verbose": False}
+
+
+def test_flag_negation_overrides_earlier_true() -> None:
+    assert run(["--verbose", "--no-verbose"]).values == {"verbose": False}
+
+
+def test_negation_with_value_raises() -> None:
+    with pytest.raises(CliUsageError):
+        run(["--no-verbose=1"])
+
+
+def test_negation_of_non_flag_is_unknown() -> None:
+    # --log is not a flag, so --no-log is not a valid negation.
+    with pytest.raises(CliUsageError):
+        run(["--no-log"])
+
+
+def test_real_option_named_no_config_is_not_negation() -> None:
+    # A genuinely-registered --no-config must match itself, not negate --config.
+    class T(ArgConfig):
+        @option
+        def config_flag(self, value: bool = False) -> bool:
+            return value
+
+    opts = collect_options(T)
+    table = resolve_names(opts)
+    flags = {n for n, o in opts.items() if resolve_value_type(o).is_flag}
+    # --no-config is a real cli-only flag on the base class.
+    res = parse_cli(["--no-config"], table, flags, set())
+    assert res.values == {"no_config": True}
