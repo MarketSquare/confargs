@@ -20,11 +20,12 @@ class ArgConfig:
             in priority order.
         default_config_section: Dotted path of the TOML table to read
             (e.g. ``"tool.mytool"``). When unset, ``tool.<name>`` is used.
-        auto_env_vars: When true, every option (that is not ``cli_only``) gets
-            an implicit environment variable named ``<NAME>_<OPTION>``.
-        strict_config: When true (the default), unknown keys or ``cli_only``
-            options found in a TOML config section raise an error instead of
-            being ignored.
+        auto_env_vars: When true, every option loadable from config
+            (``config=True``) gets an implicit environment variable named
+            ``<NAME>_<OPTION>``.
+        strict_config: When true (the default), unknown keys or options declared
+            with ``config=False`` found in a TOML config section raise an error
+            instead of being ignored.
     """
 
     name: str | None = None
@@ -33,7 +34,7 @@ class ArgConfig:
     auto_env_vars: bool = False
     strict_config: bool = True
 
-    @option(names="--help/-h", cli_only=True)
+    @option(names="--help/-h", config=False)
     def help(self, value: bool = False) -> bool:
         """Show this help message and exit."""
         if value:
@@ -43,17 +44,17 @@ class ArgConfig:
             raise Exit(0)
         return value
 
-    @option(names="--config", cli_only=True)
+    @option(names="--config", config=False)
     def config(self, value: str | None = None) -> str | None:
         """Read configuration from this file only, skipping discovery."""
         return value
 
-    @option(names="--no-config", cli_only=True)
+    @option(names="--no-config", config=False)
     def no_config(self, value: bool = False) -> bool:
         """Do not read any configuration file."""
         return value
 
-    @option(names="--ignore-git", cli_only=True)
+    @option(names="--ignore-git", config=False)
     def ignore_git(self, value: bool = False) -> bool:
         """Keep searching for config files above the project's .git directory."""
         return value

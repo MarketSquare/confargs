@@ -35,7 +35,7 @@ class RobotArgs(ArgConfig):
     config_names = ["pyproject.toml", "robot.toml"]  # noqa: RUF012 - per-subclass override
 
     # --- Eager option: expands an argument file into more options -----------
-    @option(names="--argumentfile/-A", cli_only=True, is_eager=True)
+    @option(names="--argumentfile/-A", config=False, is_eager=True)
     def argumentfile(self, value: str | None = None) -> list[str] | None:
         """Text file to read more arguments from. Use special value `STDIN` to
         read arguments from the standard input stream.
@@ -213,7 +213,7 @@ class RobotArgs(ArgConfig):
         """
         return value or []
 
-    @option(names="--version", cli_only=True)
+    @option(names="--version", config=False)
     def version(self, value: bool = False) -> bool:
         """Print version information and exit."""
         if value:

@@ -61,7 +61,7 @@ class ConfigurationProcessor:
         self.value_types = {attr: resolve_value_type(opt) for attr, opt in self.options.items()}
         self.flags = {attr for attr, vt in self.value_types.items() if vt.is_flag}
         self.lists = {attr for attr, vt in self.value_types.items() if vt.is_list}
-        self.cli_only = {attr for attr, opt in self.options.items() if opt.cli_only}
+        self.config_disabled = {attr for attr, opt in self.options.items() if not opt.config}
         self.eager = {attr for attr, opt in self.options.items() if opt.is_eager}
         self.positionals: list[str] = []
 
@@ -216,10 +216,10 @@ class ConfigurationProcessor:
         )
 
     def _map_toml(self, section: Mapping[str, Any], path: Path | None) -> dict[str, Any]:
-        """Map raw TOML keys to option attribute names, dropping cli-only keys.
+        """Map raw TOML keys to option attribute names, dropping non-config keys.
 
-        In strict mode, unknown keys and ``cli_only`` options are reported as
-        errors instead of being silently ignored.
+        In strict mode, unknown keys and options declared with ``config=False``
+        are reported as errors instead of being silently ignored.
         """
         key_map = self._toml_key_map()
         mapped: dict[str, Any] = {}
@@ -229,8 +229,8 @@ class ConfigurationProcessor:
             if attr is None:
                 invalid.append(f"{key!r} (unknown option)")
                 continue
-            if attr in self.cli_only:
-                invalid.append(f"{key!r} (command-line only)")
+            if attr in self.config_disabled:
+                invalid.append(f"{key!r} (not configurable)")
                 continue
             mapped[attr] = value
 

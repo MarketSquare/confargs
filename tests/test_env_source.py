@@ -17,11 +17,11 @@ class Tool(ArgConfig):
     def console(self, value: str = "verbose") -> str:
         return value
 
-    @option(cli_only=True)
+    @option(config=False)
     def no_config(self, value: bool = False) -> bool:
         return value
 
-    @option(cli_only=True, envvar="FORCE_ENV")
+    @option(config=False, envvar="FORCE_ENV")
     def forced(self, value: str = "") -> str:
         return value
 
@@ -41,11 +41,11 @@ def test_auto_envvar_name() -> None:
     assert env_var_name(OPTIONS["console"], "mytool", auto_env_vars=True) == "MYTOOL_CONSOLE"
 
 
-def test_cli_only_excluded_from_auto() -> None:
+def test_non_config_excluded_from_auto() -> None:
     assert env_var_name(OPTIONS["no_config"], "mytool", auto_env_vars=True) is None
 
 
-def test_explicit_envvar_honoured_even_for_cli_only() -> None:
+def test_explicit_envvar_honoured_even_for_non_config() -> None:
     assert env_var_name(OPTIONS["forced"], "mytool", auto_env_vars=True) == "FORCE_ENV"
 
 

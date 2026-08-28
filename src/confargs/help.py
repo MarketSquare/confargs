@@ -62,11 +62,13 @@ def format_help(instance: ArgConfig) -> str:
         lines.append(doc)
         lines.append("")
 
-    invocations = {attr: _invocation(attr, opt, table) for attr, opt in options.items()}
+    invocations = {attr: _invocation(attr, opt, table) for attr, opt in options.items() if opt.cli}
     pad = min(max((len(text) for text in invocations.values()), default=0), _MAX_INVOCATION_WIDTH)
 
     lines.append("Options:")
     for attr, opt in options.items():
+        if not opt.cli:
+            continue
         invocation = invocations[attr]
         summary = _summary(opt)
         if not summary:

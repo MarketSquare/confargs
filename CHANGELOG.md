@@ -41,6 +41,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Replaced the single `@option(cli_only=True)` flag with two independent
+  toggles: `@option(cli=False)` hides an option from the command line, and
+  `@option(config=False)` stops it being loaded from TOML config files. The
+  built-in discovery options now use `config=False`. **Breaking:** `cli_only` is
+  no longer accepted.
 - Renamed the distribution and import package from `argconfig` to **`confargs`**
   (the `argconfig` name was already taken on PyPI). The `ArgConfig` base class
   keeps its name.

@@ -29,10 +29,10 @@ class Greeter(ArgConfig):
     """greeter - a tiny self-contained CLI built with confargs."""
 
     name = "greeter"
-    # Expose GREETER_<OPTION> for every option that is not cli_only.
+    # Expose GREETER_<OPTION> for every configurable option.
     auto_env_vars = True
 
-    @confargs.option(names="--argumentfile/-A", cli_only=True, is_eager=True)
+    @confargs.option(names="--argumentfile/-A", config=False, is_eager=True)
     def argumentfile(self, value: str | None = None) -> list[str] | None:
         """Read more command-line arguments from a file (resolved first)."""
         return confargs.read_argument_file(value) if value else None

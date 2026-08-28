@@ -24,7 +24,7 @@ class Sample(ArgConfig):
         """Console output mode."""
         return value
 
-    @option(cli_only=True, envvar="SAMPLE_VERBOSE")
+    @option(config=False, envvar="SAMPLE_VERBOSE")
     def verbose(self, value: bool = False) -> bool:
         """Be verbose."""
         return value
@@ -70,7 +70,8 @@ def test_explicit_names_parsing() -> None:
 
 def test_option_metadata_flags() -> None:
     verbose = Sample.__dict__["verbose"]
-    assert verbose.cli_only is True
+    assert verbose.cli is True
+    assert verbose.config is False
     assert verbose.envvar == "SAMPLE_VERBOSE"
 
 
@@ -110,6 +111,18 @@ def test_resolve_names_assigns_long_and_short() -> None:
     assert table.attr_for("--log") == "log"
     assert table.attr_for("-c") == "console"
     assert table.attr_for("positional") is None
+
+
+def test_cli_false_option_has_no_cli_names() -> None:
+    class T(ArgConfig):
+        @option(cli=False)
+        def secret(self, value: str = "") -> str:
+            return value
+
+    table = resolve_names(collect_options(T))
+    assert table.attr_for("--secret") is None
+    assert table.short_to_attr.get("-s") != "secret"
+    assert table.attr_to_names["secret"] == []
 
 
 def test_resolve_names_skips_short_collision() -> None:

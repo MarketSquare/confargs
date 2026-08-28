@@ -20,7 +20,7 @@ from confargs.exceptions import CliUsageError
 class ArgFileConfig(ArgConfig):
     name = "afdemo"
 
-    @option(names="--argumentfile/-A", cli_only=True, is_eager=True)
+    @option(names="--argumentfile/-A", config=False, is_eager=True)
     def argumentfile(self, value: str | None = None) -> list[str] | None:
         """Read more arguments from a file (eager)."""
         if not value:

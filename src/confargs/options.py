@@ -58,13 +58,15 @@ class Option:
         func: OptionMethod,
         *,
         names: str | None = None,
-        cli_only: bool = False,
+        cli: bool = True,
+        config: bool = True,
         envvar: str | None = None,
         is_eager: bool = False,
     ) -> None:
         self.func = func
         self.explicit_names = names
-        self.cli_only = cli_only
+        self.cli = cli
+        self.config = config
         self.envvar = envvar
         self.is_eager = is_eager
         self.attr_name: str = func.__name__
@@ -128,7 +130,10 @@ class Option:
 
     def __repr__(self) -> str:
         names = "|".join([*self.long_names, *self.explicit_shorts])
-        return f"Option({self.attr_name!r}, names={names!r}, cli_only={self.cli_only}, is_eager={self.is_eager})"
+        return (
+            f"Option({self.attr_name!r}, names={names!r}, "
+            f"cli={self.cli}, config={self.config}, is_eager={self.is_eager})"
+        )
 
 
 @overload
@@ -139,7 +144,8 @@ def option(func: OptionMethod) -> Option: ...
 def option(
     *,
     names: str | None = ...,
-    cli_only: bool = ...,
+    cli: bool = ...,
+    config: bool = ...,
     envvar: str | None = ...,
     is_eager: bool = ...,
 ) -> Callable[[OptionMethod], Option]: ...
@@ -149,21 +155,27 @@ def option(
     func: OptionMethod | None = None,
     *,
     names: str | None = None,
-    cli_only: bool = False,
+    cli: bool = True,
+    config: bool = True,
     envvar: str | None = None,
     is_eager: bool = False,
 ) -> Option | Callable[[OptionMethod], Option]:
     """Mark a method as an confargs option.
 
     Usable bare (``@option``) or with keyword arguments
-    (``@option(names="--console/-c", cli_only=True, envvar="MY_CONSOLE")``).
+    (``@option(names="--console/-c", config=False, envvar="MY_CONSOLE")``).
 
     Args:
         names: Explicit names spec, e.g. ``"--console/-c"``. When omitted the
             long name is derived from the method name and a short name from its
             first letter (if free).
-        cli_only: If true, the option is only read from the command line and is
-            never loaded from TOML config files or environment variables.
+        cli: When false, the option is not exposed on the command line (it has
+            no CLI names and is skipped in ``--help``). Use for options that
+            should only come from config files or the environment.
+        config: When false, the option is never loaded from TOML config files.
+            Combine with the environment/CLI toggles to build, for example, a
+            CLI-only switch (``config=False`` plus no ``envvar``) that controls
+            the tool run itself.
         envvar: Name of an environment variable that provides this option's
             value.
         is_eager: If true, the option is resolved *before* any other option,
@@ -174,7 +186,7 @@ def option(
     """
 
     def wrap(f: OptionMethod) -> Option:
-        return Option(f, names=names, cli_only=cli_only, envvar=envvar, is_eager=is_eager)
+        return Option(f, names=names, cli=cli, config=config, envvar=envvar, is_eager=is_eager)
 
     if func is not None:
         return wrap(func)
@@ -209,6 +221,9 @@ def resolve_names(options: Mapping[str, Option]) -> NameTable:
 
     # Pass 1: long names and explicit short names (must be unique).
     for attr, opt in options.items():
+        if not opt.cli:
+            table.attr_to_names[attr] = []
+            continue
         display: list[str] = []
         for long in opt.long_names:
             if long in table.long_to_attr:
@@ -226,7 +241,7 @@ def resolve_names(options: Mapping[str, Option]) -> NameTable:
 
     # Pass 2: auto short names, skipping collisions.
     for attr, opt in options.items():
-        if opt.explicit_names is not None or opt.auto_short is None:
+        if not opt.cli or opt.explicit_names is not None or opt.auto_short is None:
             continue
         for candidate in _short_candidates(opt.auto_short):
             if candidate not in table.short_to_attr:
