@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from argconfig import ArgConfig, collect_options, option
-from argconfig.env_source import collect_env_values, env_var_name
+from confargs import ArgConfig, collect_options, option
+from confargs.env_source import collect_env_values, env_var_name
 
 
 class Tool(ArgConfig):

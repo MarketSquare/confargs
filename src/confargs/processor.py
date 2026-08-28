@@ -7,14 +7,14 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from argconfig.base import ArgConfig
-from argconfig.cli import parse_cli
-from argconfig.coercion import coerce_value, resolve_value_type
-from argconfig.env_source import collect_env_values
-from argconfig.exceptions import MISSING, CliUsageError, ConfigDiscoveryError, OptionDefinitionError, OptionValueError
-from argconfig.namespace import Namespace
-from argconfig.options import collect_options, resolve_names
-from argconfig.toml_source import (
+from confargs.base import ArgConfig
+from confargs.cli import parse_cli
+from confargs.coercion import coerce_value, resolve_value_type
+from confargs.env_source import collect_env_values
+from confargs.exceptions import MISSING, CliUsageError, ConfigDiscoveryError, OptionDefinitionError, OptionValueError
+from confargs.namespace import Namespace
+from confargs.options import collect_options, resolve_names
+from confargs.toml_source import (
     find_project_config_files,
     find_user_config_files,
     first_section_with_path,
@@ -23,7 +23,7 @@ from argconfig.toml_source import (
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
 
-    from argconfig.options import Option
+    from confargs.options import Option
 
 
 class ConfigurationProcessor:

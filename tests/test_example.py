@@ -6,13 +6,13 @@ from pathlib import Path
 
 import pytest
 
-import argconfig
-from argconfig import demo
+import confargs
+from confargs import demo
 
 
 def test_example_resolves_overrides(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(tmp_path)
-    config = argconfig.ConfigurationProcessor(
+    config = confargs.ConfigurationProcessor(
         demo.MyArgs,
         argv=["--no-config", "-c", "quiet", "--retries", "5", "--log", "NONE"],
         environ={},
@@ -41,4 +41,4 @@ def test_main_invalid_value_returns_error_code(tmp_path: Path, monkeypatch: pyte
 def test_examples_wrapper_reexports_symbols() -> None:
     wrapper = Path(__file__).resolve().parent.parent / "examples" / "demo.py"
     assert wrapper.is_file()
-    assert "from argconfig.demo import" in wrapper.read_text(encoding="utf-8")
+    assert "from confargs.demo import" in wrapper.read_text(encoding="utf-8")

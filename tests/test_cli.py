@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import pytest
 
-from argconfig import ArgConfig, collect_options, option, resolve_names
-from argconfig.cli import parse_cli
-from argconfig.coercion import resolve_value_type
-from argconfig.exceptions import CliUsageError
+from confargs import ArgConfig, collect_options, option, resolve_names
+from confargs.cli import parse_cli
+from confargs.coercion import resolve_value_type
+from confargs.exceptions import CliUsageError
 
 
 class Tool(ArgConfig):

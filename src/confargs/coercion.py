@@ -1,6 +1,6 @@
 """Type resolution and coercion of raw source values.
 
-argconfig only performs *basic* coercion so that the value handed to a user's
+confargs only performs *basic* coercion so that the value handed to a user's
 option method matches the type they annotated. All domain validation and
 parsing is left to the method itself.
 
@@ -20,10 +20,10 @@ import typing
 from dataclasses import dataclass
 from typing import Any, Union, get_args, get_origin
 
-from argconfig.exceptions import MISSING, OptionValueError
+from confargs.exceptions import MISSING, OptionValueError
 
 if typing.TYPE_CHECKING:
-    from argconfig.options import Option
+    from confargs.options import Option
 
 _TRUE = {"1", "true", "yes", "on", "y", "t"}
 _FALSE = {"0", "false", "no", "off", "n", "f"}

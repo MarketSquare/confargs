@@ -1,4 +1,4 @@
-"""Exceptions and sentinels used across argconfig."""
+"""Exceptions and sentinels used across confargs."""
 
 from __future__ import annotations
 
@@ -27,13 +27,13 @@ MISSING: Any = _Missing()
 
 
 class ArgConfigError(Exception):
-    """Base class for every error raised by argconfig."""
+    """Base class for every error raised by confargs."""
 
 
 class OptionDefinitionError(ArgConfigError):
     """Raised when an option/config class is defined incorrectly.
 
-    This signals a *programming* error in the tool that uses argconfig (for
+    This signals a *programming* error in the tool that uses confargs (for
     example, two options claiming the same name), not bad user input.
     """
 

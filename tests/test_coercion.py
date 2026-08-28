@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import pytest
 
-from argconfig import ArgConfig, collect_options, option
-from argconfig.coercion import ValueType, coerce_value, parse_bool, resolve_value_type
-from argconfig.exceptions import OptionValueError
+from confargs import ArgConfig, collect_options, option
+from confargs.coercion import ValueType, coerce_value, parse_bool, resolve_value_type
+from confargs.exceptions import OptionValueError
 
 
 class Types(ArgConfig):

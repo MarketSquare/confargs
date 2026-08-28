@@ -2,15 +2,15 @@
 
 from __future__ import annotations
 
-from argconfig.exceptions import Exit
-from argconfig.options import option
+from confargs.exceptions import Exit
+from confargs.options import option
 
 
 class ArgConfig:
     """Base class for a tool's configuration.
 
     Subclass this and declare options as methods decorated with
-    :func:`argconfig.option`. Class attributes configure discovery and naming:
+    :func:`confargs.option`. Class attributes configure discovery and naming:
 
     Attributes:
         name: The tool name. Used for the default TOML section
@@ -37,7 +37,7 @@ class ArgConfig:
     def help(self, value: bool = False) -> bool:
         """Show this help message and exit."""
         if value:
-            from argconfig.help import format_help
+            from confargs.help import format_help
 
             print(format_help(self))
             raise Exit(0)

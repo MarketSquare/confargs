@@ -6,8 +6,8 @@ from pathlib import Path
 
 import pytest
 
-from argconfig.exceptions import ConfigDiscoveryError
-from argconfig.toml_source import (
+from confargs.exceptions import ConfigDiscoveryError
+from confargs.toml_source import (
     find_project_config_files,
     find_user_config_files,
     first_section,

@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from argconfig import ArgConfig, option
-from argconfig.help import format_help
+from confargs import ArgConfig, option
+from confargs.help import format_help
 
 
 class Tool(ArgConfig):

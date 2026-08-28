@@ -17,7 +17,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
-    from argconfig.options import Option
+    from confargs.options import Option
 
 
 def env_var_name(

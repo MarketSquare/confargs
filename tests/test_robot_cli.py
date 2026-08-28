@@ -1,8 +1,8 @@
-"""Data-driven tests exercising argconfig against Robot Framework CLI data.
+"""Data-driven tests exercising confargs against Robot Framework CLI data.
 
 The command lines below are shaped like real ``robot`` invocations. Each case
 lists the arguments and the expected resolved values, so the suite doubles as a
-specification of how argconfig models Robot Framework's options.
+specification of how confargs models Robot Framework's options.
 """
 
 from __future__ import annotations
@@ -13,8 +13,8 @@ from typing import Any
 
 import pytest
 
-from argconfig import ConfigurationProcessor, Exit
-from argconfig.exceptions import CliUsageError, OptionValueError
+from confargs import ConfigurationProcessor, Exit
+from confargs.exceptions import CliUsageError, OptionValueError
 
 from .robot_cli import RobotArgs
 

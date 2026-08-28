@@ -14,7 +14,7 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from argconfig.exceptions import ConfigDiscoveryError
+from confargs.exceptions import ConfigDiscoveryError
 
 if sys.version_info >= (3, 11):
     import tomllib

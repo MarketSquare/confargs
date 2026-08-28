@@ -1,8 +1,8 @@
-# argconfig
+# confargs
 
 > ⚠️ Early development. APIs may change.
 
-**argconfig** is a small, declarative CLI argument parser for Python 3.10+ that
+**confargs** is a small, declarative CLI argument parser for Python 3.10+ that
 merges configuration from three sources into one result:
 
 1. **Command line** arguments (`--log out.html`, `-l NONE`)
@@ -12,12 +12,12 @@ merges configuration from three sources into one result:
 
 You describe options as **methods** on a class. Each method receives the raw
 value from whichever source supplied it, performs any parsing/validation you
-like, and returns the final value. argconfig handles discovery, precedence and
+like, and returns the final value. confargs handles discovery, precedence and
 basic type coercion; your code owns the domain logic.
 
 ```python
-import argconfig
-from argconfig import ArgConfig
+import confargs
+from confargs import ArgConfig
 
 
 class MyArgs(ArgConfig):
@@ -28,22 +28,22 @@ class MyArgs(ArgConfig):
 
     name = "mytool"
 
-    @argconfig.option
+    @confargs.option
     def log(self, value: str | None = "log.html") -> str | None:
         """HTML log file. Disable with the special value 'NONE'."""
         if value == "NONE":
             return None
         return value
 
-    @argconfig.option(names="--console/-c")
+    @confargs.option(names="--console/-c")
     def console(self, value: str = "verbose") -> str:
         choices = ["verbose", "dotted", "quiet", "none"]
         if value not in choices:
-            raise argconfig.OptionValueError(f"console must be one of {choices}")
+            raise confargs.OptionValueError(f"console must be one of {choices}")
         return value
 
 
-config = argconfig.ConfigurationProcessor(MyArgs).process()
+config = confargs.ConfigurationProcessor(MyArgs).process()
 print(config.log, config.console)
 ```
 
@@ -102,7 +102,7 @@ built-in discovery options above are defined this way).
 - The value type is taken from the `value` parameter annotation. `bool` becomes
   a flag; `list[...]` becomes a repeatable option; `int`/`float`/`str` are
   coerced from strings. Your method receives the coerced value and returns the
-  final one — raise `argconfig.OptionValueError` to reject it.
+  final one — raise `confargs.OptionValueError` to reject it.
 - Boolean options can be negated on the command line: `--verbose` sets it to
   `True`, `--no-verbose` sets it to `False`.
 
@@ -115,7 +115,7 @@ This is how an `--argumentfile` option expands a file (Robot Framework style)
 into extra arguments, including nested argument files:
 
 ```python
-from argconfig import ArgConfig, option, read_argument_file
+from confargs import ArgConfig, option, read_argument_file
 
 
 class Args(ArgConfig):
@@ -130,11 +130,11 @@ when omitted it falls back to `sys.argv[1:]`.
 ## Example
 
 A runnable example lives in [`examples/demo.py`](examples/demo.py) and is also
-installed as a console script (`argconfig-demo`) via `[project.scripts]`:
+installed as a console script (`confargs-demo`) via `[project.scripts]`:
 
 ```bash
-uv run argconfig-demo --console quiet --retries 5
-uv run argconfig-demo --help
+uv run confargs-demo --console quiet --retries 5
+uv run confargs-demo --help
 ```
 
 To ship your own tool, point a console script at a `main()` that runs the
@@ -167,8 +167,8 @@ trusted publisher on PyPI (workflow `publish.yml`, environment `pypi`) once.
 
 ## Versioning
 
-argconfig follows [Semantic Versioning](https://semver.org/). The version is
-single-sourced from `__version__` in `src/argconfig/__init__.py` (hatchling reads
+confargs follows [Semantic Versioning](https://semver.org/). The version is
+single-sourced from `__version__` in `src/confargs/__init__.py` (hatchling reads
 it at build time). While the project is `0.x.y` the API is still stabilising, so
 minor releases may include breaking changes. Notable changes are recorded in
 [`CHANGELOG.md`](CHANGELOG.md).
