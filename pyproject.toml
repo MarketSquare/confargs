@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "argconfig"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Declarative CLI argument parser that merges command line, TOML config files, and environment variables."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -48,6 +48,9 @@ dev = [
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/argconfig"]
+
+[tool.hatch.version]
+path = "src/argconfig/__init__.py"
 
 [tool.ruff]
 line-length = 120
