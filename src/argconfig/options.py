@@ -60,11 +60,13 @@ class Option:
         names: str | None = None,
         cli_only: bool = False,
         envvar: str | None = None,
+        is_eager: bool = False,
     ) -> None:
         self.func = func
         self.explicit_names = names
         self.cli_only = cli_only
         self.envvar = envvar
+        self.is_eager = is_eager
         self.attr_name: str = func.__name__
         # Names the option *wants*; short-name collisions are resolved later.
         self.long_names: list[str] = []
@@ -126,7 +128,7 @@ class Option:
 
     def __repr__(self) -> str:
         names = "|".join([*self.long_names, *self.explicit_shorts])
-        return f"Option({self.attr_name!r}, names={names!r}, cli_only={self.cli_only})"
+        return f"Option({self.attr_name!r}, names={names!r}, cli_only={self.cli_only}, is_eager={self.is_eager})"
 
 
 @overload
@@ -139,6 +141,7 @@ def option(
     names: str | None = ...,
     cli_only: bool = ...,
     envvar: str | None = ...,
+    is_eager: bool = ...,
 ) -> Callable[[OptionMethod], Option]: ...
 
 
@@ -148,6 +151,7 @@ def option(
     names: str | None = None,
     cli_only: bool = False,
     envvar: str | None = None,
+    is_eager: bool = False,
 ) -> Option | Callable[[OptionMethod], Option]:
     """Mark a method as an argconfig option.
 
@@ -162,10 +166,15 @@ def option(
             never loaded from TOML config files or environment variables.
         envvar: Name of an environment variable that provides this option's
             value.
+        is_eager: If true, the option is resolved *before* any other option,
+            directly against ``argv``. The method's return value (an iterable of
+            strings, or ``None``) replaces the option's own tokens in ``argv``,
+            allowing it to inject further arguments — this is how an
+            ``--argumentfile`` option expands a file into more options.
     """
 
     def wrap(f: OptionMethod) -> Option:
-        return Option(f, names=names, cli_only=cli_only, envvar=envvar)
+        return Option(f, names=names, cli_only=cli_only, envvar=envvar, is_eager=is_eager)
 
     if func is not None:
         return wrap(func)
