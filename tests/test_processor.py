@@ -158,12 +158,40 @@ def test_explicit_config_path(tmp_path: Path) -> None:
     assert config.log == "custom.html"
 
 
-def test_cli_only_option_not_loaded_from_toml(tmp_path: Path) -> None:
-    # no_config is cli-only; a TOML value for it must be ignored.
+def test_cli_only_option_in_toml_is_rejected_when_strict(tmp_path: Path) -> None:
+    # no_config is cli-only; setting it in TOML is an error under strict mode.
     write_pyproject(tmp_path, "[tool.mytool]\nno_config = true\nlog = 'toml.html'\n")
-    config = make([], cwd=tmp_path)
+    with pytest.raises(argconfig.ConfigDiscoveryError):
+        make([], cwd=tmp_path)
+
+
+def test_unknown_toml_key_rejected_when_strict(tmp_path: Path) -> None:
+    write_pyproject(tmp_path, "[tool.mytool]\nnope = 1\n")
+    with pytest.raises(argconfig.ConfigDiscoveryError):
+        make([], cwd=tmp_path)
+
+
+def test_non_strict_ignores_invalid_toml_keys(tmp_path: Path) -> None:
+    class Lax(MyArgs):
+        strict_config = False
+
+    (tmp_path / "pyproject.toml").write_text(
+        "[tool.mytool]\nno_config = true\nnope = 1\nlog = 'toml.html'\n",
+        encoding="utf-8",
+    )
+    config = ConfigurationProcessor(Lax, argv=[], environ={}, cwd=tmp_path).process()
     assert config.no_config is False
     assert config.log == "toml.html"
+
+
+def test_explicit_config_skips_discovery(tmp_path: Path) -> None:
+    # A discoverable pyproject with an invalid key would raise if it were read;
+    # --config must bypass discovery and use only the given file.
+    write_pyproject(tmp_path, "[tool.mytool]\nbad_key = 1\n")
+    other = tmp_path / "custom.toml"
+    other.write_text("[tool.mytool]\nlog = 'custom.html'\n", encoding="utf-8")
+    config = make(["--config", str(other)], cwd=tmp_path)
+    assert config.log == "custom.html"
 
 
 # --- help & namespace -------------------------------------------------------

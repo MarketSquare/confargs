@@ -86,11 +86,20 @@ def find_user_config_files(tool_name: str, config_names: Sequence[str]) -> list[
     return [directory / name for name in config_names if (directory / name).is_file()]
 
 
-def first_section(files: Iterable[Path], section: Sequence[str]) -> dict[str, Any] | None:
-    """Return the section table from the first file that defines it."""
+def first_section_with_path(
+    files: Iterable[Path],
+    section: Sequence[str],
+) -> tuple[Path | None, dict[str, Any] | None]:
+    """Return the first file defining ``section`` together with its path."""
     for path in files:
         data = load_toml(path)
         found = get_section(data, section)
         if found is not None:
-            return found
-    return None
+            return path, found
+    return None, None
+
+
+def first_section(files: Iterable[Path], section: Sequence[str]) -> dict[str, Any] | None:
+    """Return the section table from the first file that defines it."""
+    _, found = first_section_with_path(files, section)
+    return found

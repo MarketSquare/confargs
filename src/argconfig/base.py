@@ -22,12 +22,16 @@ class ArgConfig:
             (e.g. ``"tool.mytool"``). When unset, ``tool.<name>`` is used.
         auto_env_vars: When true, every option (that is not ``cli_only``) gets
             an implicit environment variable named ``<NAME>_<OPTION>``.
+        strict_config: When true (the default), unknown keys or ``cli_only``
+            options found in a TOML config section raise an error instead of
+            being ignored.
     """
 
     name: str | None = None
     config_names: list[str] = ["pyproject.toml"]  # noqa: RUF012 - documented, per-subclass override
     default_config_section: str | None = None
     auto_env_vars: bool = False
+    strict_config: bool = True
 
     @option(names="--help/-h", cli_only=True)
     def help(self, value: bool = False) -> bool:
