@@ -16,6 +16,8 @@ env:
 jobs:
   lint:
     runs-on: ubuntu-latest
+    env:
+      UV_PYTHON: "3.12"
     steps:
       - uses: actions/checkout@v4
       - name: Install uv
@@ -23,7 +25,6 @@ jobs:
         with:
           version: ${{ env.UV_VERSION }}
           enable-cache: true
-          python-version: "3.12"
       - name: Sync (locked)
         run: uv sync --locked
       - name: Ruff (lint)
@@ -36,11 +37,14 @@ jobs:
   test:
     name: test (${{ matrix.os }}, py${{ matrix.python-version }})
     runs-on: ${{ matrix.os }}
+    env:
+      # setup-uv@v3 has no `python-version` input, so uv picks the interpreter
+      # from UV_PYTHON (downloading it if needed) for each matrix entry.
+      UV_PYTHON: ${{ matrix.python-version }}
     strategy:
       fail-fast: false
       # Test every supported Python on Linux; on the costlier Windows runners
-      # cover only the oldest and newest supported versions. uv installs the
-      # interpreter for each matrix entry, so no per-job Python loop is needed.
+      # cover only the oldest and newest supported versions.
       matrix:
         os: [ubuntu-latest]
         python-version: ["3.10", "3.11", "3.12", "3.13"]
@@ -51,12 +55,11 @@ jobs:
             python-version: "3.13"
     steps:
       - uses: actions/checkout@v4
-      - name: Install uv and Python ${{ matrix.python-version }}
+      - name: Install uv
         uses: astral-sh/setup-uv@v3
         with:
           version: ${{ env.UV_VERSION }}
           enable-cache: true
-          python-version: ${{ matrix.python-version }}
       - name: Sync (locked)
         run: uv sync --locked
       - name: Run tests
