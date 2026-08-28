@@ -40,7 +40,7 @@ class MyArgs(ArgConfig):
             return None
         return value
 
-    @confargs.option(names="--console/-c", env=True)
+    @confargs.option(name="console", short="c", env=True)
     def console(self, value: str = "verbose") -> str:
         """Console output mode: verbose, dotted, quiet or none."""
         choices = ["verbose", "dotted", "quiet", "none"]

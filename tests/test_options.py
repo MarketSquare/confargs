@@ -19,7 +19,7 @@ class Sample(ArgConfig):
         """HTML log file."""
         return value
 
-    @option(names="--console/-c")
+    @option(name="console", short="c")
     def console(self, value: str = "verbose") -> str:
         """Console output mode."""
         return value
@@ -61,11 +61,35 @@ def test_underscore_method_becomes_dashed_long_name() -> None:
     assert T.__dict__["dry_run"].long_names == ["--dry-run"]
 
 
-def test_explicit_names_parsing() -> None:
+def test_explicit_name_and_short() -> None:
     console = Sample.__dict__["console"]
     assert console.long_names == ["--console"]
     assert console.explicit_shorts == ["-c"]
     assert console.auto_short is None
+
+
+def test_explicit_name_opts_out_of_auto_short() -> None:
+    class T(ArgConfig):
+        @option(name="verbose")
+        def verbose(self, value: bool = False) -> bool:
+            return value
+
+    opt = T.__dict__["verbose"]
+    assert opt.long_names == ["--verbose"]
+    assert opt.explicit_shorts == []
+    assert opt.auto_short is None
+
+
+def test_explicit_short_only_keeps_derived_long() -> None:
+    class T(ArgConfig):
+        @option(short="x")
+        def execute(self, value: str = "") -> str:
+            return value
+
+    opt = T.__dict__["execute"]
+    assert opt.long_names == ["--execute"]
+    assert opt.explicit_shorts == ["-x"]
+    assert opt.auto_short is None
 
 
 def test_option_metadata_flags() -> None:
@@ -143,11 +167,11 @@ def test_resolve_names_skips_short_collision() -> None:
 
 def test_resolve_names_long_collision_raises() -> None:
     class T(ArgConfig):
-        @option(names="--dup")
+        @option(name="dup")
         def a(self, value: str = "") -> str:
             return value
 
-        @option(names="--dup")
+        @option(name="dup")
         def b(self, value: str = "") -> str:
             return value
 
@@ -155,11 +179,11 @@ def test_resolve_names_long_collision_raises() -> None:
         resolve_names(collect_options(T))
 
 
-def test_invalid_names_spec_raises() -> None:
+def test_invalid_short_name_raises() -> None:
     with pytest.raises(OptionDefinitionError):
 
         class T(ArgConfig):
-            @option(names="console")  # missing leading dashes
+            @option(short="too-long")  # short names must be a single character
             def console(self, value: str = "") -> str:
                 return value
 

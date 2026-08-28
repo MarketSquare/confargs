@@ -41,6 +41,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Reworked option naming: `@option` now takes `name=` (the long option name,
+  without dashes) and `short=` (a single-character short name) instead of the
+  combined `names="--long/-s"` spec. An explicit `name` opts out of the
+  auto-derived short — pass `short=` to keep one. **Migration (pre-1.0):**
+  replace `names="--console/-c"` with `name="console", short="c"`.
 - Environment-variable reading is now **opt-in per option** via `@option(env=...)`:
   `env=True` uses a name from the class `env_var_template` (default
   `"{name}_{option}"`, upper-cased), and `env="NAME"` sets an explicit name.

@@ -27,7 +27,7 @@ class MyArgs(ArgConfig):
             return None
         return value
 
-    @option(names="--console/-c")
+    @option(name="console", short="c")
     def console(self, value: str = "verbose") -> str:
         choices = ["verbose", "dotted", "quiet", "none"]
         if value not in choices:
