@@ -108,11 +108,20 @@ built-in discovery options above are defined this way).
 
 ## Example
 
-A runnable example lives in [`examples/demo.py`](examples/demo.py):
+A runnable example lives in [`examples/demo.py`](examples/demo.py) and is also
+installed as a console script (`argconfig-demo`) via `[project.scripts]`:
 
 ```bash
-uv run python examples/demo.py --console quiet --retries 5
-uv run python examples/demo.py --help
+uv run argconfig-demo --console quiet --retries 5
+uv run argconfig-demo --help
+```
+
+To ship your own tool, point a console script at a `main()` that runs the
+processor, for example in `pyproject.toml`:
+
+```toml
+[project.scripts]
+mytool = "mytool.cli:main"
 ```
 
 ## Development
