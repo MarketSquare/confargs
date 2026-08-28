@@ -32,16 +32,15 @@ class MyArgs(ArgConfig):
     """
 
     name = "mytool"
-    auto_env_vars = True
 
-    @confargs.option
+    @confargs.option(env=True)
     def log(self, value: str | None = "log.html") -> str | None:
         """HTML log file. Disable with the special value 'NONE'."""
         if value == "NONE":
             return None
         return value
 
-    @confargs.option(names="--console/-c")
+    @confargs.option(names="--console/-c", env=True)
     def console(self, value: str = "verbose") -> str:
         """Console output mode: verbose, dotted, quiet or none."""
         choices = ["verbose", "dotted", "quiet", "none"]
@@ -49,7 +48,7 @@ class MyArgs(ArgConfig):
             raise confargs.OptionValueError(f"console must be one of {choices}, got {value!r}")
         return value
 
-    @confargs.option
+    @confargs.option(env=True)
     def retries(self, value: int = 3) -> int:
         """Number of retries on failure."""
         if value < 0:

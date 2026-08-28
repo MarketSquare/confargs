@@ -60,14 +60,14 @@ class Option:
         names: str | None = None,
         cli: bool = True,
         config: bool = True,
-        envvar: str | None = None,
+        env: bool | str = False,
         is_eager: bool = False,
     ) -> None:
         self.func = func
         self.explicit_names = names
         self.cli = cli
         self.config = config
-        self.envvar = envvar
+        self.env = env
         self.is_eager = is_eager
         self.attr_name: str = func.__name__
         # Names the option *wants*; short-name collisions are resolved later.
@@ -146,7 +146,7 @@ def option(
     names: str | None = ...,
     cli: bool = ...,
     config: bool = ...,
-    envvar: str | None = ...,
+    env: bool | str = ...,
     is_eager: bool = ...,
 ) -> Callable[[OptionMethod], Option]: ...
 
@@ -157,13 +157,13 @@ def option(
     names: str | None = None,
     cli: bool = True,
     config: bool = True,
-    envvar: str | None = None,
+    env: bool | str = False,
     is_eager: bool = False,
 ) -> Option | Callable[[OptionMethod], Option]:
     """Mark a method as an confargs option.
 
     Usable bare (``@option``) or with keyword arguments
-    (``@option(names="--console/-c", config=False, envvar="MY_CONSOLE")``).
+    (``@option(names="--console/-c", config=False, env=True)``).
 
     Args:
         names: Explicit names spec, e.g. ``"--console/-c"``. When omitted the
@@ -174,10 +174,13 @@ def option(
             should only come from config files or the environment.
         config: When false, the option is never loaded from TOML config files.
             Combine with the environment/CLI toggles to build, for example, a
-            CLI-only switch (``config=False`` plus no ``envvar``) that controls
-            the tool run itself.
-        envvar: Name of an environment variable that provides this option's
-            value.
+            CLI-only switch (``config=False``, no ``env``) that controls the
+            tool run itself.
+        env: Opt this option into the environment-variable source. ``True`` uses
+            a name generated from the class ``env_var_template`` (by default
+            ``"{name}_{option}"`` upper-cased, e.g. ``MYTOOL_LOG``); a string
+            sets an explicit variable name. ``False`` (the default) means the
+            option is never read from the environment.
         is_eager: If true, the option is resolved *before* any other option,
             directly against ``argv``. The method's return value (an iterable of
             strings, or ``None``) replaces the option's own tokens in ``argv``,
@@ -186,7 +189,7 @@ def option(
     """
 
     def wrap(f: OptionMethod) -> Option:
-        return Option(f, names=names, cli=cli, config=config, envvar=envvar, is_eager=is_eager)
+        return Option(f, names=names, cli=cli, config=config, env=env, is_eager=is_eager)
 
     if func is not None:
         return wrap(func)

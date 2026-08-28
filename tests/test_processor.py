@@ -19,9 +19,8 @@ class MyArgs(ArgConfig):
 
     name = "mytool"
     config_names = ["pyproject.toml"]  # noqa: RUF012
-    auto_env_vars = True
 
-    @option
+    @option(env=True)
     def log(self, value: str | None = "log.html") -> str | None:
         """HTML log file. 'NONE' disables it."""
         if value == "NONE":
@@ -35,7 +34,7 @@ class MyArgs(ArgConfig):
             raise OptionValueError(f"console must be one of {choices}")
         return value
 
-    @option
+    @option(env=True)
     def retries(self, value: int = 3) -> int:
         return value
 

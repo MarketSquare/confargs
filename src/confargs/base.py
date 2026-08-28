@@ -14,15 +14,16 @@ class ArgConfig:
 
     Attributes:
         name: The tool name. Used for the default TOML section
-            (``[tool.<name>]``) and, when ``auto_env_vars`` is enabled, for the
-            environment variable prefix.
+            (``[tool.<name>]``) and, for options declared with ``env=True``, as
+            the ``{name}`` part of the environment variable name.
         config_names: File names to look for when discovering TOML config,
             in priority order.
         default_config_section: Dotted path of the TOML table to read
             (e.g. ``"tool.mytool"``). When unset, ``tool.<name>`` is used.
-        auto_env_vars: When true, every option loadable from config
-            (``config=True``) gets an implicit environment variable named
-            ``<NAME>_<OPTION>``.
+        env_var_template: Template used to build the environment variable name
+            for options declared with ``env=True``. Formatted with ``name``
+            (the tool name) and ``option`` (the attribute name), then
+            upper-cased. Defaults to ``"{name}_{option}"``.
         strict_config: When true (the default), unknown keys or options declared
             with ``config=False`` found in a TOML config section raise an error
             instead of being ignored.
@@ -31,7 +32,7 @@ class ArgConfig:
     name: str | None = None
     config_names: list[str] = ["pyproject.toml"]  # noqa: RUF012 - documented, per-subclass override
     default_config_section: str | None = None
-    auto_env_vars: bool = False
+    env_var_template: str = "{name}_{option}"
     strict_config: bool = True
 
     @option(names="--help/-h", config=False)

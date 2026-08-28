@@ -24,7 +24,7 @@ class Sample(ArgConfig):
         """Console output mode."""
         return value
 
-    @option(config=False, envvar="SAMPLE_VERBOSE")
+    @option(config=False, env="SAMPLE_VERBOSE")
     def verbose(self, value: bool = False) -> bool:
         """Be verbose."""
         return value
@@ -72,7 +72,7 @@ def test_option_metadata_flags() -> None:
     verbose = Sample.__dict__["verbose"]
     assert verbose.cli is True
     assert verbose.config is False
-    assert verbose.envvar == "SAMPLE_VERBOSE"
+    assert verbose.env == "SAMPLE_VERBOSE"
 
 
 def test_default_and_missing_default() -> None:
