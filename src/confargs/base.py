@@ -35,7 +35,7 @@ class ArgConfig:
     env_var_template: str = "{name}_{option}"
     strict_config: bool = True
 
-    @option(names="--help/-h", config=False)
+    @option(name="help", short="h", config=False)
     def help(self, value: bool = False) -> bool:
         """Show this help message and exit."""
         if value:
@@ -45,17 +45,17 @@ class ArgConfig:
             raise Exit(0)
         return value
 
-    @option(names="--config", config=False)
+    @option(name="config", config=False)
     def config(self, value: str | None = None) -> str | None:
         """Read configuration from this file only, skipping discovery."""
         return value
 
-    @option(names="--no-config", config=False)
+    @option(name="no-config", config=False)
     def no_config(self, value: bool = False) -> bool:
         """Do not read any configuration file."""
         return value
 
-    @option(names="--ignore-git", config=False)
+    @option(name="ignore-git", config=False)
     def ignore_git(self, value: bool = False) -> bool:
         """Keep searching for config files above the project's .git directory."""
         return value

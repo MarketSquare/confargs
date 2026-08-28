@@ -30,7 +30,7 @@ class Greeter(ArgConfig):
 
     name = "greeter"
 
-    @confargs.option(names="--argumentfile/-A", config=False, is_eager=True)
+    @confargs.option(name="argumentfile", short="A", config=False, is_eager=True)
     def argumentfile(self, value: str | None = None) -> list[str] | None:
         """Read more command-line arguments from a file (resolved first)."""
         return confargs.read_argument_file(value) if value else None

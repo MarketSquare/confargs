@@ -15,7 +15,7 @@ class Tool(ArgConfig):
     def log(self, value: str | None = "log.html") -> str | None:
         return value
 
-    @option(names="--console/-c")
+    @option(name="console", short="c")
     def console(self, value: str = "verbose") -> str:
         return value
 

@@ -26,28 +26,20 @@ if TYPE_CHECKING:
 OptionMethod = Callable[..., Any]
 
 
-def _parse_names(spec: str) -> tuple[list[str], list[str]]:
-    """Split an explicit names spec such as ``"--console/-c"``.
+def _normalise_long(name: str) -> str:
+    """Return the canonical ``--long`` form of a bare or dashed long name."""
+    bare = name.lstrip("-")
+    if not bare:
+        raise OptionDefinitionError(f"invalid option name {name!r}")
+    return f"--{bare}"
 
-    Returns a ``(long_names, short_names)`` tuple. Long names start with ``--``
-    and short names with a single ``-``.
-    """
-    longs: list[str] = []
-    shorts: list[str] = []
-    for raw in spec.split("/"):
-        token = raw.strip()
-        if not token:
-            continue
-        if token.startswith("--"):
-            longs.append(token)
-        elif token.startswith("-"):
-            shorts.append(token)
-        else:
-            msg = f"invalid option name {token!r} in spec {spec!r}; names must start with '-' or '--'"
-            raise OptionDefinitionError(msg)
-    if not longs and not shorts:
-        raise OptionDefinitionError(f"names spec {spec!r} does not contain any option names")
-    return longs, shorts
+
+def _normalise_short(short: str) -> str:
+    """Return the canonical ``-s`` form of a bare or dashed short name."""
+    bare = short.lstrip("-")
+    if len(bare) != 1:
+        raise OptionDefinitionError(f"short option {short!r} must be a single character")
+    return f"-{bare}"
 
 
 class Option:
@@ -57,14 +49,16 @@ class Option:
         self,
         func: OptionMethod,
         *,
-        names: str | None = None,
+        name: str | None = None,
+        short: str | None = None,
         cli: bool = True,
         config: bool = True,
         env: bool | str = False,
         is_eager: bool = False,
     ) -> None:
         self.func = func
-        self.explicit_names = names
+        self.explicit_name = name
+        self.explicit_short = short
         self.cli = cli
         self.config = config
         self.env = env
@@ -74,17 +68,11 @@ class Option:
         self.long_names: list[str] = []
         self.explicit_shorts: list[str] = []
         self.auto_short: str | None = None
-        if names is not None:
-            self.long_names, self.explicit_shorts = _parse_names(names)
         self._derive_default_names()
 
     def __set_name__(self, owner: type, name: str) -> None:
         self.attr_name = name
-        if self.explicit_names is None:
-            # Re-derive now that we know the attribute name.
-            self.long_names = []
-            self.auto_short = None
-            self._derive_default_names()
+        self._derive_default_names()
 
     def __get__(self, instance: object, owner: type | None = None) -> Any:
         if instance is None:
@@ -92,12 +80,24 @@ class Option:
         return MethodType(self.func, instance)
 
     def _derive_default_names(self) -> None:
-        if self.explicit_names is not None:
-            return
-        self.long_names = [f"--{self.attr_name.replace('_', '-')}"]
-        first = self.attr_name[0]
-        if first.isalnum():
-            self.auto_short = f"-{first}"
+        # Long name: explicit ``name`` wins, otherwise derive from the method.
+        if self.explicit_name is not None:
+            long = _normalise_long(self.explicit_name)
+        else:
+            long = f"--{self.attr_name.replace('_', '-')}"
+        self.long_names = [long]
+
+        # Short name: explicit ``short`` wins. Otherwise auto-derive from the
+        # first letter, but only when the long name is itself method-derived
+        # (an explicit ``name`` opts out of the implicit short).
+        self.explicit_shorts = []
+        self.auto_short = None
+        if self.explicit_short is not None:
+            self.explicit_shorts = [_normalise_short(self.explicit_short)]
+        elif self.explicit_name is None:
+            first = long[2:3]
+            if first.isalnum():
+                self.auto_short = f"-{first}"
 
     @property
     def doc(self) -> str:
@@ -143,7 +143,8 @@ def option(func: OptionMethod) -> Option: ...
 @overload
 def option(
     *,
-    names: str | None = ...,
+    name: str | None = ...,
+    short: str | None = ...,
     cli: bool = ...,
     config: bool = ...,
     env: bool | str = ...,
@@ -154,7 +155,8 @@ def option(
 def option(
     func: OptionMethod | None = None,
     *,
-    names: str | None = None,
+    name: str | None = None,
+    short: str | None = None,
     cli: bool = True,
     config: bool = True,
     env: bool | str = False,
@@ -163,12 +165,16 @@ def option(
     """Mark a method as an confargs option.
 
     Usable bare (``@option``) or with keyword arguments
-    (``@option(names="--console/-c", config=False, env=True)``).
+    (``@option(name="console", short="c", config=False, env=True)``).
 
     Args:
-        names: Explicit names spec, e.g. ``"--console/-c"``. When omitted the
-            long name is derived from the method name and a short name from its
-            first letter (if free).
+        name: The long option name, without leading dashes (e.g. ``"console"``
+            gives ``--console``). When omitted it is derived from the method
+            name (underscores become dashes).
+        short: The short option name, e.g. ``"c"`` gives ``-c``. When omitted a
+            short name is auto-derived from the first letter of the long name —
+            but only if ``name`` was not given explicitly; passing ``name``
+            opts out of the implicit short.
         cli: When false, the option is not exposed on the command line (it has
             no CLI names and is skipped in ``--help``). Use for options that
             should only come from config files or the environment.
@@ -189,7 +195,7 @@ def option(
     """
 
     def wrap(f: OptionMethod) -> Option:
-        return Option(f, names=names, cli=cli, config=config, env=env, is_eager=is_eager)
+        return Option(f, name=name, short=short, cli=cli, config=config, env=env, is_eager=is_eager)
 
     if func is not None:
         return wrap(func)
@@ -244,7 +250,7 @@ def resolve_names(options: Mapping[str, Option]) -> NameTable:
 
     # Pass 2: auto short names, skipping collisions.
     for attr, opt in options.items():
-        if not opt.cli or opt.explicit_names is not None or opt.auto_short is None:
+        if not opt.cli or opt.auto_short is None:
             continue
         for candidate in _short_candidates(opt.auto_short):
             if candidate not in table.short_to_attr:

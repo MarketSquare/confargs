@@ -19,7 +19,7 @@ class Tool(ArgConfig):
         """HTML log file. 'NONE' disables it."""
         return value
 
-    @option(names="--console/-c")
+    @option(name="console", short="c")
     def console(self, value: str = "verbose") -> str:
         """Console output mode."""
         return value

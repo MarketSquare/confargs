@@ -35,7 +35,7 @@ class MyArgs(ArgConfig):
             return None
         return value
 
-    @confargs.option(names="--console/-c")
+    @confargs.option(name="console", short="c")
     def console(self, value: str = "verbose") -> str:
         choices = ["verbose", "dotted", "quiet", "none"]
         if value not in choices:
@@ -123,8 +123,9 @@ Combine them as needed, e.g. a CLI-only switch is `@option(config=False)` with
 ## Options in depth
 
 - Long names come from the method name (`dry_run` → `--dry-run`); a short name
-  is derived from the first letter when it is still free. Override with
-  `names="--console/-c"`.
+  is derived from the first letter when it is still free. Override either with
+  `name="console"` and/or `short="c"` (passing `name` opts out of the implicit
+  short — add `short=` to keep one).
 - The value type is taken from the `value` parameter annotation. `bool` becomes
   a flag; `list[...]` becomes a repeatable option; `int`/`float`/`str` are
   coerced from strings. Your method receives the coerced value and returns the
@@ -145,7 +146,7 @@ from confargs import ArgConfig, option, read_argument_file
 
 
 class Args(ArgConfig):
-    @option(names="--argumentfile/-A", config=False, is_eager=True)
+    @option(name="argumentfile", short="A", config=False, is_eager=True)
     def argumentfile(self, value: str | None = None) -> list[str] | None:
         return read_argument_file(value) if value else None
 ```
