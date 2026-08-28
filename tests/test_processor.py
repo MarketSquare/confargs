@@ -159,7 +159,7 @@ def test_explicit_config_path(tmp_path: Path) -> None:
 
 
 def test_cli_only_option_in_toml_is_rejected_when_strict(tmp_path: Path) -> None:
-    # no_config is cli-only; setting it in TOML is an error under strict mode.
+    # no_config is config=False; setting it in TOML is an error under strict mode.
     write_pyproject(tmp_path, "[tool.mytool]\nno_config = true\nlog = 'toml.html'\n")
     with pytest.raises(confargs.ConfigDiscoveryError):
         make([], cwd=tmp_path)

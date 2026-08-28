@@ -78,21 +78,29 @@ CLI-only options:
 - `--no-config` — ignore config files entirely.
 - `--ignore-git` — keep searching above the `.git` project root.
 
-By default (`strict_config = True`) unknown keys — and any `cli_only` option —
-found in the config section raise an error, which catches typos early. Set
-`strict_config = False` on your class to silently ignore them instead.
+By default (`strict_config = True`) unknown keys — and any option declared with
+`config=False` — found in the config section raise an error, which catches typos
+early. Set `strict_config = False` on your class to silently ignore them instead.
 
 ### Environment variables
 
 Set a name per option with `@option(envvar="MYTOOL_LOG")`, or enable
-`auto_env_vars = True` on the class to expose every non-`cli_only` option as
+`auto_env_vars = True` on the class to expose every configurable option as
 `<NAME>_<OPTION>` (e.g. `MYTOOL_CONSOLE`).
 
-### CLI-only options
+### Restricting where an option is read from
 
-Options marked `@option(cli_only=True)` are never read from TOML or the
-environment — use this for switches that control the tool run itself (the
-built-in discovery options above are defined this way).
+Two independent toggles control which sources feed an option:
+
+- `@option(cli=False)` hides the option from the command line (no CLI names, not
+  shown in `--help`) — use for options that should only come from config files
+  or the environment.
+- `@option(config=False)` stops the option being loaded from TOML config files —
+  use for switches that control the tool run itself (the built-in discovery
+  options above are defined this way).
+
+Combine them as needed, e.g. a CLI-only switch is `@option(config=False)` with
+no `envvar`.
 
 ## Options in depth
 
@@ -119,7 +127,7 @@ from confargs import ArgConfig, option, read_argument_file
 
 
 class Args(ArgConfig):
-    @option(names="--argumentfile/-A", cli_only=True, is_eager=True)
+    @option(names="--argumentfile/-A", config=False, is_eager=True)
     def argumentfile(self, value: str | None = None) -> list[str] | None:
         return read_argument_file(value) if value else None
 ```

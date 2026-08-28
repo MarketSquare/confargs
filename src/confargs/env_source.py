@@ -4,8 +4,8 @@ Each option can read from an environment variable in one of two ways:
 
 * explicitly, via ``@option(envvar="MY_TOOL_LOG")``, or
 * implicitly, when the config class sets ``auto_env_vars = True``, in which case
-  every non-``cli_only`` option gets an implicit variable named
-  ``<TOOL_NAME>_<OPTION>`` (upper-cased).
+  every option that is loadable from config (``config`` is true) gets an
+  implicit variable named ``<TOOL_NAME>_<OPTION>`` (upper-cased).
 
 An explicit ``envvar`` always wins over the auto-generated name.
 """
@@ -29,7 +29,7 @@ def env_var_name(
     """Return the environment variable name for ``option``, or ``None``."""
     if option.envvar:
         return option.envvar
-    if auto_env_vars and not option.cli_only:
+    if auto_env_vars and option.config:
         return f"{tool_name.upper()}_{option.attr_name.upper()}"
     return None
 
