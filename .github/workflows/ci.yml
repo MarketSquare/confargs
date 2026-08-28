@@ -9,6 +9,10 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  # Pin uv for reproducible CI; bump deliberately.
+  UV_VERSION: "0.12.7"
+
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -17,11 +21,11 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v3
         with:
+          version: ${{ env.UV_VERSION }}
           enable-cache: true
-      - name: Set up Python
-        run: uv python install 3.12
-      - name: Sync
-        run: uv sync
+          python-version: "3.12"
+      - name: Sync (locked)
+        run: uv sync --locked
       - name: Ruff (lint)
         run: uv run ruff check .
       - name: Ruff (format check)
@@ -30,21 +34,30 @@ jobs:
         run: uv run mypy
 
   test:
+    name: test (${{ matrix.os }}, py${{ matrix.python-version }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
+      # Test every supported Python on Linux; on the costlier Windows runners
+      # cover only the oldest and newest supported versions. uv installs the
+      # interpreter for each matrix entry, so no per-job Python loop is needed.
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest]
         python-version: ["3.10", "3.11", "3.12", "3.13"]
+        include:
+          - os: windows-latest
+            python-version: "3.10"
+          - os: windows-latest
+            python-version: "3.13"
     steps:
       - uses: actions/checkout@v4
-      - name: Install uv
+      - name: Install uv and Python ${{ matrix.python-version }}
         uses: astral-sh/setup-uv@v3
         with:
+          version: ${{ env.UV_VERSION }}
           enable-cache: true
-      - name: Set up Python ${{ matrix.python-version }}
-        run: uv python install ${{ matrix.python-version }}
-      - name: Sync
-        run: uv sync --python ${{ matrix.python-version }}
+          python-version: ${{ matrix.python-version }}
+      - name: Sync (locked)
+        run: uv sync --locked
       - name: Run tests
-        run: uv run --python ${{ matrix.python-version }} pytest --cov=confargs --cov-report=xml
+        run: uv run pytest --cov=confargs --cov-report=xml

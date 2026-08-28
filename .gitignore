@@ -10,8 +10,7 @@ dist/
 .venv/
 venv/
 
-# uv
-uv.lock
+# uv: the lockfile is committed for reproducible installs and CI caching.
 
 # Tooling caches
 .mypy_cache/
