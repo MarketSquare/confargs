@@ -107,6 +107,36 @@ CASES: list[tuple[str, list[str], dict[str, Any]]] = [
         {"name_": "Equals Suite"},
     ),
     (
+        "data-sources-argument",
+        ["--dryrun", "tests/suite_a", "tests/suite_b"],
+        {"data_sources": ["tests/suite_a", "tests/suite_b"]},
+    ),
+    (
+        "int-options-coerced",
+        ["--maxerrorlines", "10", "--consolewidth", "120", "--suitestatlevel", "2", "tests"],
+        {"maxerrorlines": 10, "consolewidth": 120, "suitestatlevel": 2},
+    ),
+    (
+        "console-color-and-markers",
+        ["-C", "ON", "-K", "off", "tests"],
+        {"consolecolors": "on", "consolemarkers": "off"},
+    ),
+    (
+        "randomize-mode",
+        ["--randomize", "suites", "tests"],
+        {"randomize": "suites"},
+    ),
+    (
+        "rerun-and-tagstats",
+        ["-R", "out.xml", "--tagstatinclude", "smoke", "--skip", "wip", "tests"],
+        {"rerunfailed": "out.xml", "tagstatinclude": ["smoke"], "skip": ["wip"]},
+    ),
+    (
+        "new-flags",
+        ["--timestampoutputs", "--splitlog", "--runemptysuite", "tests"],
+        {"timestampoutputs": True, "splitlog": True, "runemptysuite": True},
+    ),
+    (
         "defaults-only",
         ["tests"],
         {
@@ -121,6 +151,12 @@ CASES: list[tuple[str, list[str], dict[str, Any]]] = [
             "dryrun": False,
             "include": [],
             "variable": [],
+            "data_sources": ["tests"],
+            "maxerrorlines": 40,
+            "consolewidth": 78,
+            "consolecolors": "auto",
+            "randomize": "none",
+            "skip": [],
         },
     ),
 ]
@@ -138,14 +174,15 @@ def test_robot_command_lines(argv: list[str], expected: dict[str, Any], tmp_path
 
 
 def test_positional_data_sources_are_collected(tmp_path: Path) -> None:
-    processor, _ = run(["--dryrun", "tests/suite_a", "tests/suite_b"], tmp_path)
-    assert processor.positionals == ["tests/suite_a", "tests/suite_b"]
+    _, ns = run(["--dryrun", "tests/suite_a", "tests/suite_b"], tmp_path)
+    assert ns.data_sources == ["tests/suite_a", "tests/suite_b"]
 
 
 def test_double_dash_terminates_options(tmp_path: Path) -> None:
     processor, ns = run(["--name", "S", "--", "--not-an-option", "tests"], tmp_path)
     assert ns.name_ == "S"
-    assert processor.positionals == ["--not-an-option", "tests"]
+    assert ns.data_sources == ["--not-an-option", "tests"]
+    assert processor.positionals == []
 
 
 @pytest.mark.parametrize(
@@ -154,6 +191,9 @@ def test_double_dash_terminates_options(tmp_path: Path) -> None:
         (["--console", "fancy", "tests"], "console"),
         (["--variable", "novalue", "tests"], "variable"),
         (["--loglevel", "BOGUS", "tests"], "loglevel"),
+        (["--randomize", "maybe", "tests"], "randomize"),
+        (["--consolecolors", "rainbow", "tests"], "consolecolors"),
+        (["--consolemarkers", "sometimes", "tests"], "consolemarkers"),
     ],
 )
 def test_invalid_values_are_rejected(argv: list[str], match: str, tmp_path: Path) -> None:
@@ -222,7 +262,8 @@ def test_argumentfile_equals_and_name_value_forms(tmp_path: Path) -> None:
     processor, ns = run([f"--argumentfile={argfile}"], tmp_path)
     assert ns.name_ == "Equals Name"
     assert ns.loglevel == "DEBUG"
-    assert processor.positionals == ["tests/from_file"]
+    assert ns.data_sources == ["tests/from_file"]
+    assert processor.positionals == []
 
 
 def test_argumentfile_from_stdin(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
