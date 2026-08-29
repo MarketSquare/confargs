@@ -23,6 +23,7 @@ from typing import Any, Union, get_args, get_origin
 from confargs.exceptions import MISSING, OptionValueError
 
 if typing.TYPE_CHECKING:
+    from confargs.arguments import Argument
     from confargs.options import Option
 
 _TRUE = {"1", "true", "yes", "on", "y", "t"}
@@ -45,8 +46,8 @@ class ValueType:
         return self.base is bool and not self.is_list
 
 
-def resolve_value_type(option: Option) -> ValueType:
-    """Inspect an option and describe the type its value expects."""
+def resolve_value_type(option: Option | Argument) -> ValueType:
+    """Inspect an option (or argument) and describe the type its value expects."""
     if option.func is None:
         return _resolve_declarative(option)
 
@@ -59,7 +60,7 @@ def resolve_value_type(option: Option) -> ValueType:
     return _analyse(hint)
 
 
-def _resolve_declarative(option: Option) -> ValueType:
+def _resolve_declarative(option: Option | Argument) -> ValueType:
     """Describe the value type of a declarative option (one without a method).
 
     An explicit ``type=`` wins; otherwise the type is inferred from the

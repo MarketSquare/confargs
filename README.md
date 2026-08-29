@@ -169,6 +169,49 @@ class Args(ArgConfig):
 `ConfigurationProcessor(Args, argv=[...])` accepts an explicit argument list;
 when omitted it falls back to `sys.argv[1:]`.
 
+## Positional arguments
+
+Options are addressed by name; **arguments** are positional — filled from the
+leftover, non-option tokens in declaration order. They mirror the two option
+spellings (a method for parsing/validation, or a plain attribute for
+pass-through) and share the same coercion path. Declare them with
+`confargs.argument(...)`:
+
+```python
+import confargs
+from confargs import ArgConfig, argument
+
+
+class Runner(ArgConfig):
+    name = "runner"
+
+    # A required single positional.
+    suite = argument(name="suite", help="Suite file to run.")
+
+    # An optional one (used only when present).
+    tag = argument(name="tag", nargs="?", default=None, help="Only run this tag.")
+
+    # A variadic one that collects the rest into a list.
+    @argument(nargs="*")
+    def data_sources(self, value: list[str]) -> list[str]:
+        """Extra data source paths."""
+        return value
+```
+
+`nargs` controls how many positionals an argument consumes:
+
+- `1` (default) — exactly one; required unless a `default` is given.
+- `"?"` — at most one; the `default` is used when it is absent.
+- `"*"` — zero or more, collected into a list (default `[]`).
+- `"+"` — one or more, collected into a list; required.
+
+Only one variadic argument (`"*"`/`"+"`) is allowed and it must be declared
+last. Arguments are also read from TOML config by their **name**
+(`suite = "smoke.robot"` in the tool's section), with command-line positionals
+taking precedence. Resolved values appear on the `Namespace` alongside options —
+so avoid names that clash with `Namespace` methods (`keys`, `values`, `items`,
+`as_dict`).
+
 ## Example
 
 A complete, self-contained example lives in [`examples/demo.py`](examples/demo.py)

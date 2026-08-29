@@ -7,9 +7,10 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from confargs.arguments import collect_arguments
 from confargs.base import ArgConfig
 from confargs.cli import parse_cli
-from confargs.coercion import coerce_value, resolve_value_type
+from confargs.coercion import ValueType, coerce_value, resolve_value_type
 from confargs.env_source import collect_env_values
 from confargs.exceptions import MISSING, CliUsageError, ConfigDiscoveryError, OptionDefinitionError, OptionValueError
 from confargs.namespace import Namespace
@@ -23,6 +24,7 @@ from confargs.toml_source import (
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
 
+    from confargs.arguments import Argument
     from confargs.options import Option
 
 
@@ -57,19 +59,39 @@ class ConfigurationProcessor:
         self.cwd = Path.cwd() if cwd is None else Path(cwd)
 
         self.options: dict[str, Option] = collect_options(type(self.instance))
+        self.arguments: dict[str, Argument] = collect_arguments(type(self.instance))
+        clash = set(self.options) & set(self.arguments)
+        if clash:
+            names = ", ".join(sorted(clash))
+            raise OptionDefinitionError(f"names used by both an option and an argument: {names}")
         self.table = resolve_names(self.options)
         self.value_types = {attr: resolve_value_type(opt) for attr, opt in self.options.items()}
+        self.arg_value_types = {attr: self._argument_value_type(arg) for attr, arg in self.arguments.items()}
         self.flags = {attr for attr, vt in self.value_types.items() if vt.is_flag}
         self.lists = {attr for attr, vt in self.value_types.items() if vt.is_list}
         self.config_disabled = {attr for attr, opt in self.options.items() if not opt.config}
+        self.config_disabled |= {attr for attr, arg in self.arguments.items() if not arg.config}
         self.eager = {attr for attr, opt in self.options.items() if opt.is_eager}
         self.positionals: list[str] = []
+
+    @staticmethod
+    def _argument_value_type(argument: Argument) -> ValueType:
+        """Describe an argument's value type, forcing a list for variadic ones."""
+        vt = resolve_value_type(argument)
+        if not argument.is_variadic:
+            return vt
+        if vt.is_list:
+            return vt
+        # A variadic argument always yields a list; treat a scalar annotation as
+        # the element type (falling back to ``str`` for an unhelpful ``list``).
+        base = vt.base if isinstance(vt.base, type) and vt.base is not list else str
+        return ValueType(base=base, is_list=True, allows_none=vt.allows_none)
 
     def process(self) -> Namespace:
         """Parse every source, merge them and return resolved values."""
         argv = self._expand_eager(self.argv)
         cli_result = parse_cli(argv, self.table, self.flags, self.lists)
-        self.positionals = cli_result.positionals
+        arg_cli_values = self._assign_positionals(cli_result.positionals)
 
         nearest, user = self._load_toml(cli_result.values)
         env_values = collect_env_values(
@@ -84,7 +106,41 @@ class ConfigurationProcessor:
         for attr, opt in self.options.items():
             raw = self._pick(attr, sources)
             resolved[attr] = self._resolve(opt, attr, raw)
+
+        arg_sources: list[Mapping[str, Any]] = [arg_cli_values, nearest, user]
+        for attr, arg in self.arguments.items():
+            raw = self._pick(attr, arg_sources)
+            resolved[attr] = self._resolve_argument(arg, attr, raw)
         return Namespace(resolved)
+
+    def _assign_positionals(self, positionals: Sequence[str]) -> dict[str, Any]:
+        """Assign leftover positional tokens to declared arguments by order.
+
+        Returns the raw command-line values keyed by argument attribute name. A
+        single argument gets one token; a variadic argument (always the last
+        one) collects the remainder. Any positionals left over when arguments
+        are declared are a usage error; with no arguments declared they are kept
+        on :attr:`positionals` for the caller to inspect.
+        """
+        tokens = list(positionals)
+        values: dict[str, Any] = {}
+        index = 0
+        for attr, arg in self.arguments.items():
+            if arg.is_variadic:
+                rest = tokens[index:]
+                index = len(tokens)
+                if rest:
+                    values[attr] = rest
+            elif index < len(tokens):
+                values[attr] = tokens[index]
+                index += 1
+
+        leftover = tokens[index:]
+        if self.arguments and leftover:
+            joined = ", ".join(repr(token) for token in leftover)
+            raise CliUsageError(f"unexpected argument(s): {joined}")
+        self.positionals = leftover
+        return values
 
     @staticmethod
     def _pick(attr: str, sources: Sequence[Mapping[str, Any]]) -> Any:
@@ -192,6 +248,16 @@ class ConfigurationProcessor:
         value = coerce_value(raw, self.value_types[attr])
         return method(value)
 
+    def _resolve_argument(self, arg: Argument, attr: str, raw: Any) -> Any:
+        method = getattr(self.instance, attr)
+        if raw is MISSING:
+            default = arg.default
+            if default is MISSING:
+                raise OptionValueError(f"argument {arg.metavar} is required")
+            return method(default)
+        value = coerce_value(raw, self.arg_value_types[attr])
+        return method(value)
+
     def _load_toml(self, cli_values: Mapping[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
         if cli_values.get("no_config"):
             return {}, {}
@@ -247,4 +313,9 @@ class ConfigurationProcessor:
             mapping[attr.replace("_", "-")] = attr
             for long in opt.long_names:
                 mapping[long.lstrip("-")] = attr
+        for attr, arg in self.arguments.items():
+            mapping[attr] = attr
+            mapping[attr.replace("_", "-")] = attr
+            mapping[arg.arg_name] = attr
+            mapping[arg.arg_name.replace("_", "-")] = attr
         return mapping
