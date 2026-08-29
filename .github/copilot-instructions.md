@@ -105,10 +105,6 @@ releases.
    `pr-title` workflow and consumed by release-please):
    `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`,
    `chore`, `revert`. Example: `feat: add eager option support`.
-5. Every commit includes the trailer:
-   ```
-   Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
-   ```
 
 ### Pre-1.0 versioning & breaking changes
 
