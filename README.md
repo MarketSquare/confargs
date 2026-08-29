@@ -126,6 +126,32 @@ class Args(ArgConfig):
     env_var_template = "MYTOOL_CFG_{option}"  # -> MYTOOL_CFG_LOG
 ```
 
+#### Extra arguments from an environment variable
+
+Some tools accept a whole *command line* from an environment variable —
+`ROBOT_OPTIONS`, `PYTEST_ADDOPTS`, `GREP_OPTIONS` and similar. Opt in by setting
+`options_env_var` on your class:
+
+```python
+class Args(ArgConfig):
+    name = "mytool"
+    options_env_var = "MYTOOL_OPTIONS"
+```
+
+When that variable is set, its value is split with shell-like quoting and
+**prepended** to `argv`, so anything typed on the real command line still wins
+for scalar options, while repeatable options accumulate (env first, then CLI).
+The injected tokens go through the normal pipeline, so they may even contain an
+eager `--argumentfile`:
+
+```bash
+MYTOOL_OPTIONS="--log NONE --tag ci" mytool --tag smoke   # log=None, tags=[ci, smoke]
+```
+
+Quoting follows POSIX shell rules (`shlex`), so quote values containing spaces —
+and, on Windows, quote paths so their backslashes survive
+(`MYTOOL_OPTIONS='--out "C:\build\out"'`).
+
 ### Restricting where an option is read from
 
 Two independent toggles control which sources feed an option:
