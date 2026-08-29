@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > stabilising. Minor (`0.X.0`) releases may include breaking changes; patch
 > (`0.x.Y`) releases are reserved for backwards-compatible fixes.
 
+## [0.3.0](https://github.com/MarketSquare/confargs/compare/v0.2.0...v0.3.0) (2026-08-28)
+
+
+### Features
+
+* allow declaring options as plain class attributes ([#9](https://github.com/MarketSquare/confargs/issues/9)) ([a75afff](https://github.com/MarketSquare/confargs/commit/a75afff617987e55669a8b0e3039a14d347e4d4f))
+* make environment variables opt-in via option(env=...) ([#7](https://github.com/MarketSquare/confargs/issues/7)) ([daa5773](https://github.com/MarketSquare/confargs/commit/daa5773287bbb08bf9082687ea0a375c5b17d322))
+* replace cli_only with independent cli and config toggles ([#6](https://github.com/MarketSquare/confargs/issues/6)) ([90ddb12](https://github.com/MarketSquare/confargs/commit/90ddb12fd6e4e5dc325bb23e1128f38a59dd31e6))
+* replace names spec with separate name and short arguments ([#8](https://github.com/MarketSquare/confargs/issues/8)) ([85e9b03](https://github.com/MarketSquare/confargs/commit/85e9b03bda14a60bcb4c6cb92f0fb5019e14b61a))
+
 ## [0.2.0](https://github.com/MarketSquare/confargs/compare/v0.1.0...v0.2.0) (2026-08-28)
 
 
