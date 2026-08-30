@@ -6,7 +6,7 @@ builtin ``--profile`` option) merges their values on top of the base section
 before the usual key mapping and precedence handling run, so the resulting
 values still sit *below* environment variables and command-line arguments.
 
-Only a deliberately small subset of robotcode's profile model is supported:
+Only a deliberately small subset of a full profile model is supported:
 
 * selection by exact name or glob pattern (``fnmatch``);
 * multiple profiles, applied in ``precedence`` order (lower first, higher wins),

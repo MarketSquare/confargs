@@ -129,7 +129,7 @@ $ mytool --profile 'ci-*'        # glob pattern
 $ mytool --profile ci --profile extra   # multiple, merged in order
 ```
 
-Semantics (a small subset of robotcode's profiles):
+Semantics (a deliberately small subset of what a full profile system offers):
 
 - **Selection** is by exact name or `fnmatch` glob; every pattern must match at
   least one profile or a `ConfigDiscoveryError` is raised.
