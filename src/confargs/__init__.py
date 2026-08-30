@@ -22,6 +22,7 @@ from confargs.exceptions import (
 from confargs.namespace import Namespace
 from confargs.options import Option, collect_options, option, resolve_names
 from confargs.processor import ConfigurationProcessor
+from confargs.profiles import build_profile_overlay, select_profiles
 
 __version__ = "0.3.0"  # x-release-please-version
 
@@ -40,11 +41,13 @@ __all__ = [
     "OptionValueError",
     "__version__",
     "argument",
+    "build_profile_overlay",
     "collect_arguments",
     "collect_options",
     "option",
     "read_argument_file",
     "resolve_names",
+    "select_profiles",
     "split_argument_file",
     "split_env_args",
 ]

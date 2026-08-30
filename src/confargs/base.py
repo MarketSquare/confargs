@@ -67,6 +67,11 @@ class ArgConfig:
         """Keep searching for config files above the project's .git directory."""
         return value
 
+    @option(name="profile", config=False)
+    def profile(self, value: list[str] | None = None) -> list[str]:
+        """Activate one or more configuration profiles (glob patterns allowed)."""
+        return value or []
+
     @property
     def config_section(self) -> tuple[str, ...]:
         """The TOML table path to read configuration from."""

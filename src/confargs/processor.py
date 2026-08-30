@@ -15,6 +15,7 @@ from confargs.env_source import collect_env_values, split_env_args
 from confargs.exceptions import MISSING, CliUsageError, ConfigDiscoveryError, OptionDefinitionError, OptionValueError
 from confargs.namespace import Namespace
 from confargs.options import collect_options, resolve_names
+from confargs.profiles import build_profile_overlay
 from confargs.toml_source import (
     find_project_config_files,
     find_user_config_files,
@@ -284,11 +285,12 @@ class ConfigurationProcessor:
 
         section = self.instance.config_section
         config_names = self.instance.config_names
+        requested = list(cli_values.get("profile") or [])
 
         explicit = cli_values.get("config")
         if explicit:
             path, data = first_section_with_path([Path(explicit)], section)
-            return self._map_toml(data or {}, path), {}
+            return self._apply_profiles(data, path, requested), {}
 
         ignore_git = bool(cli_values.get("ignore_git"))
         project_files = find_project_config_files(self.cwd, config_names, ignore_git=ignore_git)
@@ -297,9 +299,42 @@ class ConfigurationProcessor:
         user_files = find_user_config_files(self.instance.tool_name, config_names)
         user_path, user = first_section_with_path(user_files, section)
         return (
-            self._map_toml(nearest or {}, nearest_path),
-            self._map_toml(user or {}, user_path),
+            self._apply_profiles(nearest, nearest_path, requested),
+            self._map_toml(self._strip_profiles(user), user_path),
         )
+
+    @staticmethod
+    def _strip_profiles(section: Mapping[str, Any] | None) -> dict[str, Any]:
+        """Drop the reserved ``profiles`` sub-table from a raw config section."""
+        if not section:
+            return {}
+        return {key: value for key, value in section.items() if key != "profiles"}
+
+    def _apply_profiles(
+        self,
+        section: Mapping[str, Any] | None,
+        path: Path | None,
+        requested: Sequence[str],
+    ) -> dict[str, Any]:
+        """Merge any selected profiles onto ``section`` before mapping it.
+
+        Profiles live under ``<section>.profiles.<name>`` in the same file. The
+        reserved ``profiles`` key is always removed so it never trips strict
+        validation. When ``--profile`` is used but no matching profile exists,
+        a :class:`ConfigDiscoveryError` is raised.
+        """
+        if section is None:
+            if requested:
+                raise ConfigDiscoveryError("--profile was given but no configuration file was found")
+            return {}
+        data = dict(section)
+        profiles = data.pop("profiles", {})
+        if requested:
+            if not isinstance(profiles, dict) or not profiles:
+                location = f" in {path}" if path is not None else ""
+                raise ConfigDiscoveryError(f"--profile was given but no profiles are defined{location}")
+            data.update(build_profile_overlay(profiles, requested, path))
+        return self._map_toml(data, path)
 
     def _map_toml(self, section: Mapping[str, Any], path: Path | None) -> dict[str, Any]:
         """Map raw TOML keys to option attribute names, dropping non-config keys.
