@@ -149,6 +149,36 @@ arguments and environment variables still win over any profile value. Profiles
 are read from the nearest project config only; `inherits`, `precedence` and
 `enabled` are reserved keys, not options.
 
+### Inheriting other config files (`extends`)
+
+A config section can pull in one or more *other* config files with the reserved
+`extends` key, so shared settings live in one place and each project overrides
+only what it needs:
+
+```toml
+# pyproject.toml
+[tool.mytool]
+extends = ["../shared/base.toml", "/etc/mytool/global.toml"]
+loglevel = "DEBUG"   # overrides whatever the extended files set
+```
+
+Semantics:
+
+- **Paths** may be relative (resolved against the file that declares `extends`)
+  or absolute. A single string is accepted as shorthand for a one-item list.
+- **Order** — extended files are merged in the order listed, then the declaring
+  file's own keys are applied last. So later files override earlier ones, and
+  the declaring file always wins.
+- **Override, not extend** — like profiles, values (including lists) are
+  *replaced*, never concatenated.
+- **Recursive** — an extended file may itself `extends` further files; every
+  file must contain the same section (`[tool.<tool_name>]`). Cycles are
+  rejected with a `ConfigDiscoveryError`.
+
+`extends` is a reserved key (stripped before option mapping) and applies to
+whichever config layer declares it. Because it stays in the TOML layer,
+environment variables and command-line arguments still take precedence.
+
 ### Environment variables
 
 Reading from the environment is **opt-in per option**. Pass `env=True` to use a
