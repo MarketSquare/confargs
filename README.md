@@ -143,8 +143,14 @@ Combine them as needed, e.g. a CLI-only switch is `@option(config=False)` with
   short — add `short=` to keep one).
 - The value type is taken from the `value` parameter annotation. `bool` becomes
   a flag; `list[...]` becomes a repeatable option; `int`/`float`/`str` are
-  coerced from strings. Your method receives the coerced value and returns the
-  final one — raise `confargs.OptionValueError` to reject it.
+  coerced from strings. confargs performs this coercion *before* calling your
+  method, so the `value` you receive already matches the annotated type.
+- Your method receives the coerced value and returns the final one. Whatever it
+  returns is stored as-is — including `None`, which is a legitimate value (e.g.
+  a `--log NONE` that disables a file). There is no special "return nothing to
+  keep the input" behaviour: if the method has no parsing or validation to do,
+  declare the option as a plain attribute instead so the coerced value passes
+  straight through. Raise `confargs.OptionValueError` to reject a value.
 - Boolean options can be negated on the command line: `--verbose` sets it to
   `True`, `--no-verbose` sets it to `False`.
 
