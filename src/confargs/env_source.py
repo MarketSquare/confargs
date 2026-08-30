@@ -13,6 +13,7 @@ Options left at the default ``env=False`` are never read from the environment.
 
 from __future__ import annotations
 
+import shlex
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -21,6 +22,17 @@ if TYPE_CHECKING:
     from confargs.options import Option
 
 DEFAULT_ENV_VAR_TEMPLATE = "{name}_{option}"
+
+
+def split_env_args(value: str) -> list[str]:
+    """Split an ``*_OPTIONS``-style environment value into argv tokens.
+
+    Uses shell-like quoting (:func:`shlex.split`), so
+    ``"--name 'My Suite' --dryrun"`` yields
+    ``["--name", "My Suite", "--dryrun"]``. Note that, as with a POSIX shell,
+    backslashes are treated as escapes — quote Windows paths accordingly.
+    """
+    return shlex.split(value)
 
 
 def env_var_name(

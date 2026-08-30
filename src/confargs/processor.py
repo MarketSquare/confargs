@@ -11,7 +11,7 @@ from confargs.arguments import collect_arguments
 from confargs.base import ArgConfig
 from confargs.cli import parse_cli
 from confargs.coercion import ValueType, coerce_value, resolve_value_type
-from confargs.env_source import collect_env_values
+from confargs.env_source import collect_env_values, split_env_args
 from confargs.exceptions import MISSING, CliUsageError, ConfigDiscoveryError, OptionDefinitionError, OptionValueError
 from confargs.namespace import Namespace
 from confargs.options import collect_options, resolve_names
@@ -69,6 +69,14 @@ class ConfigurationProcessor:
         self.argv = list(sys.argv[1:] if argv is None else argv)
         self.environ = dict(os.environ if environ is None else environ)
         self.cwd = Path.cwd() if cwd is None else Path(cwd)
+
+        # Extra command-line arguments supplied via an environment variable
+        # (``ROBOT_OPTIONS`` style) are prepended so real argv still wins.
+        options_env_var = self.instance.options_env_var
+        if options_env_var:
+            raw_env_args = self.environ.get(options_env_var)
+            if raw_env_args:
+                self.argv = split_env_args(raw_env_args) + self.argv
 
         self.options: dict[str, Option] = collect_options(type(self.instance))
         self.arguments: dict[str, Argument] = collect_arguments(type(self.instance))

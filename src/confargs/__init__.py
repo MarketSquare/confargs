@@ -9,6 +9,7 @@ from __future__ import annotations
 from confargs.argfile import read_argument_file, split_argument_file
 from confargs.arguments import Argument, argument, collect_arguments
 from confargs.base import ArgConfig
+from confargs.env_source import split_env_args
 from confargs.exceptions import (
     MISSING,
     ArgConfigError,
@@ -45,4 +46,5 @@ __all__ = [
     "read_argument_file",
     "resolve_names",
     "split_argument_file",
+    "split_env_args",
 ]

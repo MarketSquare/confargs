@@ -24,6 +24,12 @@ class ArgConfig:
             for options declared with ``env=True``. Formatted with ``name``
             (the tool name) and ``option`` (the attribute name), then
             upper-cased. Defaults to ``"{name}_{option}"``.
+        options_env_var: Name of an environment variable holding extra
+            command-line arguments (in the style of ``ROBOT_OPTIONS`` /
+            ``PYTEST_ADDOPTS``). When set and present in the environment, its
+            value is split with shell-like quoting and prepended to ``argv``, so
+            real command-line arguments still take precedence. ``None`` (the
+            default) disables the feature.
         strict_config: When true (the default), unknown keys or options declared
             with ``config=False`` found in a TOML config section raise an error
             instead of being ignored.
@@ -33,6 +39,7 @@ class ArgConfig:
     config_names: list[str] = ["pyproject.toml"]  # noqa: RUF012 - documented, per-subclass override
     default_config_section: str | None = None
     env_var_template: str = "{name}_{option}"
+    options_env_var: str | None = None
     strict_config: bool = True
 
     @option(name="help", short="h", config=False)
