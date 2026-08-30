@@ -13,7 +13,7 @@ def _run(cls: type[ArgConfig], argv: list[str], **kw: object) -> confargs.Namesp
 class Factories(ArgConfig):
     """A tool using factory defaults."""
 
-    name = "factories"
+    tool_name = "factories"
 
     tags: list[str] = option(name="tags", default=list)
     meta: dict = option(name="meta", type=dict, default=dict)
@@ -45,7 +45,7 @@ def test_factory_produces_fresh_value_each_time() -> None:
 
 def test_lambda_factory() -> None:
     class Custom(ArgConfig):
-        name = "custom"
+        tool_name = "custom"
         entries: list[str] = option(name="entries", default=lambda: ["seed"])
 
     assert _run(Custom, []).entries == ["seed"]
@@ -53,7 +53,7 @@ def test_lambda_factory() -> None:
 
 def test_non_callable_default_unchanged() -> None:
     class Plain(ArgConfig):
-        name = "plain"
+        tool_name = "plain"
         title: str = option(name="title", default="report")
         count: int = option(name="count", default=3)
 
@@ -64,7 +64,7 @@ def test_non_callable_default_unchanged() -> None:
 
 def test_method_option_with_factory_default() -> None:
     class Method(ArgConfig):
-        name = "method"
+        tool_name = "method"
 
         @option(name="names")
         def names(self, value: list[str] = list) -> list[str]:  # type: ignore[assignment]

@@ -51,7 +51,7 @@ class RobotArgs(ArgConfig):
     of the real command-line interface, rebuilt with confargs.
     """
 
-    name = "robot"
+    tool_name = "robot"
     config_names = ["pyproject.toml", "robot.toml"]  # noqa: RUF012 - per-subclass override
 
     # --- Positional arguments ----------------------------------------------
@@ -80,7 +80,7 @@ class RobotArgs(ArgConfig):
     # Pure pass-through options are plain attributes. Optional scalars annotate
     # ``str | None``; repeatable options use ``default=list`` for a clean
     # ``list[str]`` with an empty-list default.
-    name_: str | None = option(
+    name: str | None = option(
         name="name",
         short="N",
         default=None,

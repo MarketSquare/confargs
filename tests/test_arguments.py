@@ -16,7 +16,7 @@ def _process(cls: type[ArgConfig], argv: list[str], **kwargs: object) -> confarg
 class Basic(ArgConfig):
     """A tool with positional arguments."""
 
-    name = "basic"
+    tool_name = "basic"
 
     src = argument(name="src", help="Source path.")
     count = argument(name="count", type=int, nargs="?", default=0, help="Optional count.")
@@ -48,7 +48,7 @@ def test_required_argument_missing_raises() -> None:
 
 def test_options_and_arguments_together() -> None:
     class Mixed(ArgConfig):
-        name = "mixed"
+        tool_name = "mixed"
         verbose = option(name="verbose", default=False, help="Verbose.")
         path = argument(name="path", help="A path.")
 
@@ -66,7 +66,7 @@ def test_arguments_after_double_dash() -> None:
 
 def test_unexpected_positionals_raise() -> None:
     class OneArg(ArgConfig):
-        name = "onearg"
+        tool_name = "onearg"
         only = argument(name="only")
 
     with pytest.raises(confargs.CliUsageError, match="unexpected argument"):
@@ -75,7 +75,7 @@ def test_unexpected_positionals_raise() -> None:
 
 def test_plus_nargs_requires_at_least_one() -> None:
     class Plus(ArgConfig):
-        name = "plus"
+        tool_name = "plus"
         files = argument(name="files", nargs="+", type=str)
 
     assert _process(Plus, ["a", "b"]).files == ["a", "b"]
@@ -104,7 +104,7 @@ def test_cli_positionals_override_config(tmp_path) -> None:
 
 def test_declarative_argument_coercion() -> None:
     class Nums(ArgConfig):
-        name = "nums"
+        tool_name = "nums"
         numbers = argument(name="numbers", nargs="*", type=list[int])
 
     assert _process(Nums, ["1", "2", "3"]).numbers == [1, 2, 3]
@@ -112,7 +112,7 @@ def test_declarative_argument_coercion() -> None:
 
 def test_method_argument_can_reject_value() -> None:
     class Guard(ArgConfig):
-        name = "guard"
+        tool_name = "guard"
 
         @argument(name="port")
         def port(self, value: int) -> int:
@@ -127,7 +127,7 @@ def test_method_argument_can_reject_value() -> None:
 
 def test_variadic_must_be_last() -> None:
     class Bad(ArgConfig):
-        name = "bad"
+        tool_name = "bad"
         many = argument(name="many", nargs="*")
         tail = argument(name="tail")
 
@@ -142,7 +142,7 @@ def test_invalid_nargs_rejected() -> None:
 
 def test_option_and_argument_with_same_config_name_coexist() -> None:
     class Mix(ArgConfig):
-        name = "mix"
+        tool_name = "mix"
         thing = option(name="thing", default="")
         thing_arg = argument(name="thing")  # same config name, different attribute
 

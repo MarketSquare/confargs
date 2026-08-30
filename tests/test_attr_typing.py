@@ -13,7 +13,7 @@ def _run(cls: type[ArgConfig], argv: list[str], **kw: object) -> confargs.Namesp
 class Annotated(ArgConfig):
     """A tool whose declarative options carry attribute annotations."""
 
-    name = "annotated"
+    tool_name = "annotated"
 
     title: str = option(name="title", default="report")
     retries: int = option(name="retries", default=3)
@@ -52,7 +52,7 @@ def test_optional_annotation_allows_none() -> None:
 
 def test_argument_annotation_used() -> None:
     class Nums(ArgConfig):
-        name = "nums"
+        tool_name = "nums"
         count: int = argument(name="count")
 
     assert _run(Nums, ["7"]).count == 7
@@ -60,7 +60,7 @@ def test_argument_annotation_used() -> None:
 
 def test_explicit_type_overrides_annotation() -> None:
     class Mixed(ArgConfig):
-        name = "mixed"
+        tool_name = "mixed"
         # Annotation says str, but explicit type= wins.
         value: str = option(name="value", type=int, default=0)
 
@@ -69,7 +69,7 @@ def test_explicit_type_overrides_annotation() -> None:
 
 def test_annotation_absent_falls_back_to_default_inference() -> None:
     class NoAnno(ArgConfig):
-        name = "noanno"
+        tool_name = "noanno"
         count = option(name="count", default=3)
 
     assert _run(NoAnno, ["--count", "9"]).count == 9

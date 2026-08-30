@@ -31,7 +31,7 @@ class MyArgs(ArgConfig):
     merged into one configuration object.
     """
 
-    name = "mytool"
+    tool_name = "mytool"
 
     # Declarative option (no method): a simple value that needs no custom
     # parsing can be declared as a plain attribute.
