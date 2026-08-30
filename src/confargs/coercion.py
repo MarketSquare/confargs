@@ -56,7 +56,12 @@ def resolve_value_type(option: Option | Argument) -> ValueType:
     if annotation is MISSING:
         return ValueType(base=str)
 
-    hints = typing.get_type_hints(option.func)
+    try:
+        hints = typing.get_type_hints(option.func)
+    except Exception:
+        # Unresolved forward refs: fall back to analysing the raw annotation
+        # instead of surfacing a bare NameError from ``get_type_hints``.
+        return _analyse(annotation)
     hint = hints.get(option.value_parameter.name, str)
     return _analyse(hint)
 
@@ -76,7 +81,17 @@ def _resolve_declarative(option: Option | Argument) -> ValueType:
     if default is None:
         return ValueType(base=str, allows_none=True)
     if default is not MISSING:
-        return _analyse(type(default))
+        # A callable default is a *factory* (see ``_materialize_default``), so
+        # infer the type from the value it builds rather than from the callable
+        # itself (``type(list)`` is ``type``, which would collapse a list option
+        # to a scalar). Fall back to ``str`` if the factory cannot be sampled.
+        sample = default
+        if callable(default):
+            try:
+                sample = default()
+            except Exception:
+                return ValueType(base=str)
+        return _analyse(type(sample))
     return ValueType(base=str)
 
 
@@ -94,7 +109,7 @@ def _analyse(hint: Any) -> ValueType:
     if origin is Literal:
         return _analyse_literal(get_args(hint), is_list=False, allows_none=allows_none)
 
-    if origin in (list, set, tuple):
+    if origin in (list, set, tuple) or hint in (list, set, tuple):
         elem_args = get_args(hint)
         element = elem_args[0] if elem_args else str
         if get_origin(element) is Literal:
