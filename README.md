@@ -159,6 +159,29 @@ Combine them as needed, e.g. a CLI-only switch is `@option(config=False)` with
 - Boolean options can be negated on the command line: `--verbose` sets it to
   `True`, `--no-verbose` sets it to `False`.
 
+### Restricting a value to a set of choices
+
+Annotate an option (or argument) with `typing.Literal[...]` to constrain it to a
+fixed set of allowed values. confargs coerces the incoming value to the members'
+type and then rejects anything outside the set with an `OptionValueError`; the
+allowed values are also shown in `--help`:
+
+```python
+from typing import Literal
+
+from confargs import ArgConfig, option
+
+
+class Args(ArgConfig):
+    console: Literal["verbose", "dotted", "quiet", "none"] = option(name="console", default="verbose")
+    level: Literal[1, 2, 3] = option(name="level", default=1)
+    langs: list[Literal["en", "pl"]] = option(name="langs", default=list)
+```
+
+The Literal may be optional (`Literal["a", "b"] | None`), wrapped in `list[...]`
+for repeatable options, or supplied on a method's `value` parameter. Non-string
+members (e.g. `Literal[1, 2, 3]`) are coerced before the membership check.
+
 ### Eager options and argument files
 
 Mark an option `is_eager=True` to resolve it *before* every other source,

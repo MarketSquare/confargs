@@ -18,7 +18,7 @@ from __future__ import annotations
 import types
 import typing
 from dataclasses import dataclass
-from typing import Any, Union, get_args, get_origin
+from typing import Any, Literal, Union, get_args, get_origin
 
 from confargs.exceptions import MISSING, OptionValueError
 
@@ -39,6 +39,7 @@ class ValueType:
     base: type
     is_list: bool = False
     allows_none: bool = False
+    choices: tuple[Any, ...] | None = None
 
     @property
     def is_flag(self) -> bool:
@@ -90,14 +91,25 @@ def _analyse(hint: Any) -> ValueType:
         hint = args[0] if args else str
         origin = get_origin(hint)
 
+    if origin is Literal:
+        return _analyse_literal(get_args(hint), is_list=False, allows_none=allows_none)
+
     if origin in (list, set, tuple):
         elem_args = get_args(hint)
         element = elem_args[0] if elem_args else str
+        if get_origin(element) is Literal:
+            return _analyse_literal(get_args(element), is_list=True, allows_none=allows_none)
         base = element if isinstance(element, type) else str
         return ValueType(base=base, is_list=True, allows_none=allows_none)
 
     base = hint if isinstance(hint, type) else str
     return ValueType(base=base, is_list=False, allows_none=allows_none)
+
+
+def _analyse_literal(members: tuple[Any, ...], *, is_list: bool, allows_none: bool) -> ValueType:
+    """Describe a ``Literal[...]`` annotation as a choice-constrained type."""
+    base = type(members[0]) if members else str
+    return ValueType(base=base, is_list=is_list, allows_none=allows_none, choices=tuple(members))
 
 
 def parse_bool(raw: str) -> bool:
@@ -134,12 +146,21 @@ def _as_list(raw: Any) -> list[Any]:
     return [raw]
 
 
+def _check_choice(value: Any, choices: tuple[Any, ...]) -> Any:
+    """Return ``value`` if it is one of ``choices``, else raise."""
+    if value in choices:
+        return value
+    allowed = ", ".join(repr(choice) for choice in choices)
+    raise OptionValueError(f"invalid value {value!r}; choose from {allowed}")
+
+
 def coerce_value(raw: Any, value_type: ValueType) -> Any:
     """Coerce a raw source value into the option's declared type.
 
     ``None`` is passed through when the option allows it. List options accept
     native sequences (TOML arrays, repeated CLI flags) or comma-separated
-    strings (environment variables).
+    strings (environment variables). When the type was declared with
+    ``Literal[...]``, each coerced value is validated against the allowed set.
     """
     if raw is None:
         if value_type.allows_none:
@@ -147,6 +168,12 @@ def coerce_value(raw: Any, value_type: ValueType) -> Any:
         raise OptionValueError("value may not be null")
 
     if value_type.is_list:
-        return [_coerce_scalar(item, value_type.base) for item in _as_list(raw)]
+        items = [_coerce_scalar(item, value_type.base) for item in _as_list(raw)]
+        if value_type.choices is not None:
+            items = [_check_choice(item, value_type.choices) for item in items]
+        return items
 
-    return _coerce_scalar(raw, value_type.base)
+    value = _coerce_scalar(raw, value_type.base)
+    if value_type.choices is not None:
+        return _check_choice(value, value_type.choices)
+    return value
