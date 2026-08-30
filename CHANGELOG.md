@@ -9,6 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > stabilising. Minor (`0.X.0`) releases may include breaking changes; patch
 > (`0.x.Y`) releases are reserved for backwards-compatible fixes.
 
+## [0.4.0](https://github.com/MarketSquare/confargs/compare/v0.3.0...v0.4.0) (2026-08-30)
+
+
+### Features
+
+* add configuration profiles ([#26](https://github.com/MarketSquare/confargs/issues/26)) ([44ed0ca](https://github.com/MarketSquare/confargs/commit/44ed0cacd7a56aadd8b6cce0b28c97313ae74127))
+* add positional argument support ([#19](https://github.com/MarketSquare/confargs/issues/19)) ([553a2f6](https://github.com/MarketSquare/confargs/commit/553a2f65439a68251b41e8535ab2c780507b93ec)), closes [#15](https://github.com/MarketSquare/confargs/issues/15)
+* load extra CLI arguments from an environment variable ([#21](https://github.com/MarketSquare/confargs/issues/21)) ([6f1ecba](https://github.com/MarketSquare/confargs/commit/6f1ecba13b6bb7e08f053c3be257d4a4a49a46b4)), closes [#3](https://github.com/MarketSquare/confargs/issues/3)
+* read option/argument value type from attribute annotation ([#23](https://github.com/MarketSquare/confargs/issues/23)) ([3085da3](https://github.com/MarketSquare/confargs/commit/3085da3c8f984b8e76932c4003cb7f8ee6186160)), closes [#14](https://github.com/MarketSquare/confargs/issues/14)
+* rename the tool-name attribute from name to tool_name ([#28](https://github.com/MarketSquare/confargs/issues/28)) ([d98c293](https://github.com/MarketSquare/confargs/commit/d98c293e28d70820e5587980c458fd4090bac84d))
+* treat a callable option/argument default as a factory ([#24](https://github.com/MarketSquare/confargs/issues/24)) ([787356b](https://github.com/MarketSquare/confargs/commit/787356b5e65bd8fdf200c91f84680b55806817f1)), closes [#14](https://github.com/MarketSquare/confargs/issues/14)
+* validate Literal[...] annotations as choices ([#25](https://github.com/MarketSquare/confargs/issues/25)) ([196464b](https://github.com/MarketSquare/confargs/commit/196464b9a670703f1c3e2899d3e4ed6cf55e2bf0)), closes [#22](https://github.com/MarketSquare/confargs/issues/22)
+
+
+### Documentation
+
+* add Copilot/AI contributor instructions ([#16](https://github.com/MarketSquare/confargs/issues/16)) ([b517488](https://github.com/MarketSquare/confargs/commit/b517488adb1066f804e4502b45b3a269fc47d9ca))
+* clarify option method return value is always final ([#18](https://github.com/MarketSquare/confargs/issues/18)) ([6aa157a](https://github.com/MarketSquare/confargs/commit/6aa157a6c6a4e017013e8b1a30a26f7739ddfee7)), closes [#13](https://github.com/MarketSquare/confargs/issues/13)
+
 ## [0.3.0](https://github.com/MarketSquare/confargs/compare/v0.2.0...v0.3.0) (2026-08-28)
 
 
