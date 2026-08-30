@@ -62,7 +62,10 @@ Options come in two flavours:
   value passes straight through coercion. Set `default=` (a `bool` makes it a
   flag, `None` makes it optional) and `type=` to control the value type — or
   annotate the attribute directly (`attr: int = confargs.option(...)`), which
-  confargs reads as the value type.
+  confargs reads as the value type. A **callable** `default` is treated as a
+  factory (called to build the value), so `tags: list[str] = option(default=list)`
+  gives a fresh `[]` — handy for list options that would otherwise need a
+  mutable default.
 
 ## Precedence
 

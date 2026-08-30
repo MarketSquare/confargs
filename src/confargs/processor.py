@@ -28,6 +28,18 @@ if TYPE_CHECKING:
     from confargs.options import Option
 
 
+def _materialize_default(default: Any) -> Any:
+    """Produce a default value, invoking a callable as a *factory*.
+
+    A callable ``default`` (e.g. ``list``, ``dict`` or a ``lambda``) is called
+    with no arguments to build a fresh value, mirroring
+    :func:`dataclasses.field`'s ``default_factory``. This avoids sharing a
+    mutable default (such as ``[]``) across resolutions. Non-callable defaults
+    are returned unchanged.
+    """
+    return default() if callable(default) else default
+
+
 class ConfigurationProcessor:
     """Resolve a config class into a :class:`Namespace` of final values.
 
@@ -244,7 +256,7 @@ class ConfigurationProcessor:
             if default is MISSING:
                 display = self.table.attr_to_names.get(attr, [attr])[0]
                 raise OptionValueError(f"option {display} is required")
-            return method(default)
+            return method(_materialize_default(default))
         value = coerce_value(raw, self.value_types[attr])
         return method(value)
 
@@ -254,7 +266,7 @@ class ConfigurationProcessor:
             default = arg.default
             if default is MISSING:
                 raise OptionValueError(f"argument {arg.metavar} is required")
-            return method(default)
+            return method(_materialize_default(default))
         value = coerce_value(raw, self.arg_value_types[attr])
         return method(value)
 
