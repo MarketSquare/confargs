@@ -9,14 +9,24 @@ command lines.
 Option help strings are lifted from Robot Framework's own usage text so the
 generated ``--help`` output reads like the tool it emulates. Only the light
 parsing/validation Robot Framework performs up front is reproduced here; the
-heavy lifting is intentionally left to confargs's shared coercion path. Options
-that need no parsing or validation are declared in the short attribute form
-(``name_ = option(...)``); the rest use decorated methods.
+heavy lifting is intentionally left to confargs's shared coercion path.
+
+The example models current confargs best practice:
+
+* pure pass-through values are declared as **plain attributes** with an explicit
+  type annotation (``name: str = option(...)``) rather than as methods;
+* repeatable options default to an empty list via ``default=list`` so the
+  attribute type is a clean ``list[str]`` (no ``| None`` / ``value or []``);
+* fixed choice sets are expressed with ``typing.Literal[...]`` so confargs
+  validates them and shows them in ``--help``;
+* only options that genuinely parse or validate (``--variable``, ``--log``,
+  ``--loglevel``, ``--argumentfile`` ...) keep a decorated method.
 """
 
 from __future__ import annotations
 
 import sys
+from typing import Literal
 
 from confargs import (
     ArgConfig,
@@ -28,9 +38,6 @@ from confargs import (
     split_argument_file,
 )
 
-CONSOLE_CHOICES = ("verbose", "dotted", "quiet", "none")
-CONSOLE_COLOR_CHOICES = ("auto", "on", "ansi", "off")
-CONSOLE_MARKER_CHOICES = ("auto", "on", "off")
 RANDOMIZE_CHOICES = ("all", "suites", "tests", "none")
 LOG_LEVELS = ("TRACE", "DEBUG", "INFO", "WARN", "ERROR", "NONE")
 
@@ -49,11 +56,11 @@ class RobotArgs(ArgConfig):
 
     # --- Positional arguments ----------------------------------------------
     # The data sources (suite files or directories) Robot Framework executes.
-    # A pure pass-through variadic argument needs no method.
-    data_sources = argument(
+    # A pure pass-through variadic argument needs no method; the annotation
+    # documents its resolved type.
+    data_sources: list[str] = argument(
         name="data-sources",
         nargs="*",
-        type=list[str],
         help="Paths to the test data (suite files or directories) to execute.",
     )
 
@@ -70,9 +77,10 @@ class RobotArgs(ArgConfig):
         return read_argument_file(value)
 
     # --- Suite / test selection --------------------------------------------
-    # Pure pass-through options (no parsing/validation) are declared as plain
-    # attributes rather than methods.
-    name_ = option(
+    # Pure pass-through options are plain attributes. Optional scalars annotate
+    # ``str | None``; repeatable options use ``default=list`` for a clean
+    # ``list[str]`` with an empty-list default.
+    name_: str | None = option(
         name="name",
         short="N",
         default=None,
@@ -80,44 +88,55 @@ class RobotArgs(ArgConfig):
         "created based on the executed file or directory.",
     )
 
-    doc = option(
+    doc: str | None = option(
         name="doc",
         short="D",
         default=None,
         help="Set the documentation of the top level suite.",
     )
 
-    @option(name="metadata", short="M")
-    def metadata(self, value: list[str] | None = None) -> list[str]:
-        """Set metadata of the top level suite. Value can contain formatting."""
-        return value or []
+    metadata: list[str] = option(
+        name="metadata",
+        short="M",
+        default=list,
+        help="Set metadata of the top level suite. Value can contain formatting.",
+    )
 
-    @option(name="settag", short="G")
-    def settag(self, value: list[str] | None = None) -> list[str]:
-        """Sets given tag(s) to all executed tests."""
-        return value or []
+    settag: list[str] = option(
+        name="settag",
+        short="G",
+        default=list,
+        help="Sets given tag(s) to all executed tests.",
+    )
 
-    @option(name="test", short="t")
-    def test(self, value: list[str] | None = None) -> list[str]:
-        """Select tests by name or by long name containing also parent suite
-        name like `Parent.Test`. Name is case and space insensitive.
-        """
-        return value or []
+    test: list[str] = option(
+        name="test",
+        short="t",
+        default=list,
+        help="Select tests by name or by long name containing also parent "
+        "suite name like `Parent.Test`. Name is case and space insensitive.",
+    )
 
-    @option(name="suite", short="s")
-    def suite(self, value: list[str] | None = None) -> list[str]:
-        """Select suites by name."""
-        return value or []
+    suite: list[str] = option(
+        name="suite",
+        short="s",
+        default=list,
+        help="Select suites by name.",
+    )
 
-    @option(name="include", short="i")
-    def include(self, value: list[str] | None = None) -> list[str]:
-        """Select tests by tag."""
-        return value or []
+    include: list[str] = option(
+        name="include",
+        short="i",
+        default=list,
+        help="Select tests by tag.",
+    )
 
-    @option(name="exclude", short="e")
-    def exclude(self, value: list[str] | None = None) -> list[str]:
-        """Select tests not matching by tag."""
-        return value or []
+    exclude: list[str] = option(
+        name="exclude",
+        short="e",
+        default=list,
+        help="Select tests not matching by tag.",
+    )
 
     # --- Variables ----------------------------------------------------------
     @option(name="variable", short="v")
@@ -133,13 +152,15 @@ class RobotArgs(ArgConfig):
             parsed.append((key, val))
         return parsed
 
-    @option(name="variablefile", short="V")
-    def variablefile(self, value: list[str] | None = None) -> list[str]:
-        """Python or YAML file to read variables from."""
-        return value or []
+    variablefile: list[str] = option(
+        name="variablefile",
+        short="V",
+        default=list,
+        help="Python or YAML file to read variables from.",
+    )
 
     # --- Output files -------------------------------------------------------
-    outputdir = option(
+    outputdir: str = option(
         name="outputdir",
         short="d",
         default=".",
@@ -147,7 +168,7 @@ class RobotArgs(ArgConfig):
         "tests are run from and the given path is considered relative to that.",
     )
 
-    output = option(
+    output: str = option(
         name="output",
         short="o",
         default="output.xml",
@@ -170,7 +191,7 @@ class RobotArgs(ArgConfig):
             return None
         return value
 
-    xunit = option(
+    xunit: str | None = option(
         name="xunit",
         short="x",
         default=None,
@@ -189,75 +210,76 @@ class RobotArgs(ArgConfig):
         return value
 
     # --- Execution switches -------------------------------------------------
-    dryrun = option(
+    dryrun: bool = option(
         name="dryrun",
         default=False,
         help="Verifies test data and runs tests so that library keywords are not executed.",
     )
 
-    exitonfailure = option(
+    exitonfailure: bool = option(
         name="exitonfailure",
         short="X",
         default=False,
         help="Stops test execution if any critical test fails.",
     )
 
-    @option(name="skiponfailure")
-    def skiponfailure(self, value: list[str] | None = None) -> list[str]:
-        """Tests having given tag will be skipped if they fail."""
-        return value or []
+    skiponfailure: list[str] = option(
+        name="skiponfailure",
+        default=list,
+        help="Tests having given tag will be skipped if they fail.",
+    )
 
-    rpa = option(
+    rpa: bool = option(
         name="rpa",
         default=False,
         help="Turn on the generic automation mode. Negate with --no-rpa.",
     )
 
-    statusrc = option(
+    statusrc: bool = option(
         name="statusrc",
         default=True,
         help="Set the return code to zero regardless of failures with "
         "--no-statusrc. Error codes are returned normally.",
     )
 
-    @option(name="console")
-    def console(self, value: str = "verbose") -> str:
-        """How to report execution on the console. Valid values are `verbose`,
-        `dotted`, `quiet` and `none`.
-        """
-        if value not in CONSOLE_CHOICES:
-            raise OptionValueError(f"invalid --console value {value!r}; choose from {', '.join(CONSOLE_CHOICES)}")
-        return value
+    # Fixed choice sets are expressed with ``Literal[...]``: confargs validates
+    # the value and lists the choices in ``--help``.
+    console: Literal["verbose", "dotted", "quiet", "none"] = option(
+        name="console",
+        default="verbose",
+        help="How to report execution on the console.",
+    )
 
-    dotted = option(
+    dotted: bool = option(
         name="dotted",
         short=".",
         default=False,
         help="Shortcut for `--console dotted`.",
     )
 
-    quiet = option(
+    quiet: bool = option(
         name="quiet",
         default=False,
         help="Shortcut for `--console quiet`.",
     )
 
-    @option(name="pythonpath", short="P")
-    def pythonpath(self, value: list[str] | None = None) -> list[str]:
-        """Additional locations (directories, ZIPs) where to search libraries
-        and other extensions when they are imported.
-        """
-        return value or []
+    pythonpath: list[str] = option(
+        name="pythonpath",
+        short="P",
+        default=list,
+        help="Additional locations (directories, ZIPs) where to search "
+        "libraries and other extensions when they are imported.",
+    )
 
     # --- Re-running and ordering -------------------------------------------
-    rerunfailed = option(
+    rerunfailed: str | None = option(
         name="rerunfailed",
         short="R",
         default=None,
         help="Select failed tests from an earlier output file to re-execute.",
     )
 
-    rerunfailedsuites = option(
+    rerunfailedsuites: str | None = option(
         name="rerunfailedsuites",
         short="S",
         default=None,
@@ -267,7 +289,8 @@ class RobotArgs(ArgConfig):
     @option(name="randomize")
     def randomize(self, value: str = "none") -> str:
         """Randomize the test execution order. Valid values are `all`,
-        `suites`, `tests` and `none` (default).
+        `suites`, `tests` and `none` (default). An optional `:seed` suffix
+        pins the randomization, e.g. `--randomize all:12345`.
         """
         normalized = value.split(":", 1)[0].lower()
         if normalized not in RANDOMIZE_CHOICES:
@@ -275,147 +298,152 @@ class RobotArgs(ArgConfig):
         return value
 
     # --- Output tuning ------------------------------------------------------
-    logtitle = option(name="logtitle", default=None, help="Title for the generated log file.")
+    logtitle: str | None = option(name="logtitle", default=None, help="Title for the generated log file.")
 
-    reporttitle = option(name="reporttitle", default=None, help="Title for the generated report.")
+    reporttitle: str | None = option(name="reporttitle", default=None, help="Title for the generated report.")
 
-    debugfile = option(
+    debugfile: str | None = option(
         name="debugfile",
         short="b",
         default=None,
         help="Debug file written during execution. Not created unless given.",
     )
 
-    timestampoutputs = option(
+    timestampoutputs: bool = option(
         name="timestampoutputs",
         short="T",
         default=False,
         help="Add a timestamp to all generated output files.",
     )
 
-    splitlog = option(
+    splitlog: bool = option(
         name="splitlog",
         default=False,
         help="Split the log file into smaller pieces that open in browsers transparently.",
     )
 
-    @option(name="removekeywords")
-    def removekeywords(self, value: list[str] | None = None) -> list[str]:
-        """Remove keyword data from the generated log file. Data can be removed
-        e.g. based on keyword status, name or type.
-        """
-        return value or []
+    removekeywords: list[str] = option(
+        name="removekeywords",
+        default=list,
+        help="Remove keyword data from the generated log file. Data can be "
+        "removed e.g. based on keyword status, name or type.",
+    )
 
-    @option(name="flattenkeywords")
-    def flattenkeywords(self, value: list[str] | None = None) -> list[str]:
-        """Flatten matching keywords in the generated log file."""
-        return value or []
+    flattenkeywords: list[str] = option(
+        name="flattenkeywords",
+        default=list,
+        help="Flatten matching keywords in the generated log file.",
+    )
 
-    @option(name="expandkeywords")
-    def expandkeywords(self, value: list[str] | None = None) -> list[str]:
-        """Matching keywords are automatically expanded in the log file."""
-        return value or []
+    expandkeywords: list[str] = option(
+        name="expandkeywords",
+        default=list,
+        help="Matching keywords are automatically expanded in the log file.",
+    )
 
-    maxerrorlines = option(
+    maxerrorlines: int = option(
         name="maxerrorlines",
         default=40,
         help="Maximum number of error message lines to show in the report and log.",
     )
 
-    maxassignlength = option(
+    maxassignlength: int = option(
         name="maxassignlength",
         default=200,
         help="Maximum number of characters to show in log for assigned variables.",
     )
 
     # --- Tag statistics -----------------------------------------------------
-    @option(name="tagstatinclude")
-    def tagstatinclude(self, value: list[str] | None = None) -> list[str]:
-        """Include only matching tags in the generated statistics."""
-        return value or []
+    tagstatinclude: list[str] = option(
+        name="tagstatinclude",
+        default=list,
+        help="Include only matching tags in the generated statistics.",
+    )
 
-    @option(name="tagstatexclude")
-    def tagstatexclude(self, value: list[str] | None = None) -> list[str]:
-        """Exclude matching tags from the generated statistics."""
-        return value or []
+    tagstatexclude: list[str] = option(
+        name="tagstatexclude",
+        default=list,
+        help="Exclude matching tags from the generated statistics.",
+    )
 
-    @option(name="tagstatcombine")
-    def tagstatcombine(self, value: list[str] | None = None) -> list[str]:
-        """Create combined statistics based on tags."""
-        return value or []
+    tagstatcombine: list[str] = option(
+        name="tagstatcombine",
+        default=list,
+        help="Create combined statistics based on tags.",
+    )
 
-    suitestatlevel = option(
+    suitestatlevel: int = option(
         name="suitestatlevel",
         default=0,
         help="How many levels to show in the `Statistics by Suite` table. 0 shows all.",
     )
 
     # --- Extensions ---------------------------------------------------------
-    @option(name="listener")
-    def listener(self, value: list[str] | None = None) -> list[str]:
-        """A listener interface to monitor test execution."""
-        return value or []
+    listener: list[str] = option(
+        name="listener",
+        default=list,
+        help="A listener interface to monitor test execution.",
+    )
 
-    @option(name="prerunmodifier")
-    def prerunmodifier(self, value: list[str] | None = None) -> list[str]:
-        """Programmatic modifier for the test data before execution."""
-        return value or []
+    prerunmodifier: list[str] = option(
+        name="prerunmodifier",
+        default=list,
+        help="Programmatic modifier for the test data before execution.",
+    )
 
-    @option(name="prerebotmodifier")
-    def prerebotmodifier(self, value: list[str] | None = None) -> list[str]:
-        """Programmatic modifier for the results before report/log creation."""
-        return value or []
+    prerebotmodifier: list[str] = option(
+        name="prerebotmodifier",
+        default=list,
+        help="Programmatic modifier for the results before report/log creation.",
+    )
 
-    @option(name="parser")
-    def parser(self, value: list[str] | None = None) -> list[str]:
-        """Custom parser for parsing data in non-default formats."""
-        return value or []
+    parser: list[str] = option(
+        name="parser",
+        default=list,
+        help="Custom parser for parsing data in non-default formats.",
+    )
 
-    @option(name="language")
-    def language(self, value: list[str] | None = None) -> list[str]:
-        """Activate localization by giving one or more language codes or names."""
-        return value or []
+    language: list[str] = option(
+        name="language",
+        default=list,
+        help="Activate localization by giving one or more language codes or names.",
+    )
 
     # --- Skipping and empty suites -----------------------------------------
-    @option(name="skip")
-    def skip(self, value: list[str] | None = None) -> list[str]:
-        """Tests having the given tag will be skipped unconditionally."""
-        return value or []
+    skip: list[str] = option(
+        name="skip",
+        default=list,
+        help="Tests having the given tag will be skipped unconditionally.",
+    )
 
-    runemptysuite = option(
+    runemptysuite: bool = option(
         name="runemptysuite",
         default=False,
         help="Execute test suite even if it contains no tests.",
     )
 
-    exitonerror = option(
+    exitonerror: bool = option(
         name="exitonerror",
         default=False,
         help="Stop execution if any error occurs when parsing test data or importing libraries.",
     )
 
     # --- Console output -----------------------------------------------------
-    @option(name="consolecolors", short="C")
-    def consolecolors(self, value: str = "auto") -> str:
-        """Use colors on console output. Valid values are `auto`, `on`, `ansi`
-        and `off`.
-        """
-        if value.lower() not in CONSOLE_COLOR_CHOICES:
-            raise OptionValueError(f"invalid --consolecolors {value!r}; choose from {', '.join(CONSOLE_COLOR_CHOICES)}")
-        return value.lower()
+    consolecolors: Literal["auto", "on", "ansi", "off"] = option(
+        name="consolecolors",
+        short="C",
+        default="auto",
+        help="Use colors on console output.",
+    )
 
-    @option(name="consolemarkers", short="K")
-    def consolemarkers(self, value: str = "auto") -> str:
-        """Show markers on the console when top-level keywords in a test end.
-        Valid values are `auto`, `on` and `off`.
-        """
-        if value.lower() not in CONSOLE_MARKER_CHOICES:
-            raise OptionValueError(
-                f"invalid --consolemarkers {value!r}; choose from {', '.join(CONSOLE_MARKER_CHOICES)}"
-            )
-        return value.lower()
+    consolemarkers: Literal["auto", "on", "off"] = option(
+        name="consolemarkers",
+        short="K",
+        default="auto",
+        help="Show markers on the console when top-level keywords in a test end.",
+    )
 
-    consolewidth = option(
+    consolewidth: int = option(
         name="consolewidth",
         short="W",
         default=78,

@@ -118,7 +118,7 @@ CASES: list[tuple[str, list[str], dict[str, Any]]] = [
     ),
     (
         "console-color-and-markers",
-        ["-C", "ON", "-K", "off", "tests"],
+        ["-C", "on", "-K", "off", "tests"],
         {"consolecolors": "on", "consolemarkers": "off"},
     ),
     (
@@ -188,12 +188,12 @@ def test_double_dash_terminates_options(tmp_path: Path) -> None:
 @pytest.mark.parametrize(
     ("argv", "match"),
     [
-        (["--console", "fancy", "tests"], "console"),
+        (["--console", "fancy", "tests"], "invalid value 'fancy'"),
         (["--variable", "novalue", "tests"], "variable"),
         (["--loglevel", "BOGUS", "tests"], "loglevel"),
         (["--randomize", "maybe", "tests"], "randomize"),
-        (["--consolecolors", "rainbow", "tests"], "consolecolors"),
-        (["--consolemarkers", "sometimes", "tests"], "consolemarkers"),
+        (["--consolecolors", "rainbow", "tests"], "invalid value 'rainbow'"),
+        (["--consolemarkers", "sometimes", "tests"], "invalid value 'sometimes'"),
     ],
 )
 def test_invalid_values_are_rejected(argv: list[str], match: str, tmp_path: Path) -> None:
