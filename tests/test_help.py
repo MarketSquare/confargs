@@ -71,3 +71,23 @@ def test_help_includes_builtin_options() -> None:
     assert "-h, --help" in text
     assert "--no-config" in text
     assert "--config" in text
+
+
+def test_help_wraps_long_invocation_onto_its_own_line() -> None:
+    class Wide(ArgConfig):
+        """Wide tool."""
+
+        tool_name = "wide"
+
+        very_long_option_name_here = option(
+            name="very-long-option-name-here",
+            default="",
+            help="A summary that must move to the next line.",
+        )
+
+    text = format_help(Wide())
+    lines = text.splitlines()
+    idx = next(i for i, line in enumerate(lines) if "--very-long-option-name-here" in line)
+    # The invocation exceeds the padding width, so its summary wraps below it.
+    assert "summary that must move" not in lines[idx]
+    assert "summary that must move" in lines[idx + 1]
