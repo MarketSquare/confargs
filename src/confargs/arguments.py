@@ -209,7 +209,9 @@ def argument(
             metavar. Defaults to the method or attribute name.
         help: Help text for a declarative argument (one without a method).
         default: Default value used when no positional (and no config value) is
-            supplied. A ``"*"`` argument defaults to an empty list.
+            supplied. A ``"*"`` argument defaults to an empty list. A
+            **callable** default is treated as a factory and called with no
+            arguments to build the value (e.g. ``default=list``).
         type: Explicit value type for a declarative argument (e.g. ``int`` or
             ``list[str]``). When omitted the type is taken from the attribute
             annotation (``count: int = argument(...)``) if present, then inferred

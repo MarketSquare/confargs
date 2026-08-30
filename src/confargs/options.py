@@ -254,7 +254,9 @@ def option(
             docstring instead.
         default: Default value for a declarative option. A ``bool`` default
             makes the option a flag; a ``None`` default makes the value
-            optional (``str | None``).
+            optional (``str | None``). A **callable** default is treated as a
+            factory and called with no arguments to build the value (e.g.
+            ``default=list`` yields a fresh ``[]`` each time).
         type: Explicit value type for a declarative option (e.g. ``int`` or
             ``list[str]``). When omitted the type is taken from the attribute
             annotation (``attr: int = option(...)``) if present, then inferred
