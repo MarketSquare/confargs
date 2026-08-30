@@ -18,7 +18,7 @@ from confargs.exceptions import CliUsageError
 
 
 class ArgFileConfig(ArgConfig):
-    name = "afdemo"
+    tool_name = "afdemo"
 
     @option(name="argumentfile", short="A", config=False, is_eager=True)
     def argumentfile(self, value: str | None = None) -> list[str] | None:
@@ -134,7 +134,7 @@ def test_eager_after_double_dash_is_not_expanded(tmp_path: Path) -> None:
 
 def test_eager_option_returning_bare_string_is_rejected() -> None:
     class BadConfig(ArgConfig):
-        name = "bad"
+        tool_name = "bad"
 
         @option(is_eager=True)
         def broken(self, value: str | None = None) -> str | None:

@@ -12,7 +12,7 @@ from confargs.exceptions import MISSING, OptionDefinitionError
 class Sample(ArgConfig):
     """A sample tool."""
 
-    name = "sample"
+    tool_name = "sample"
 
     @option
     def log(self, value: str | None = "log.html") -> str | None:
@@ -194,7 +194,7 @@ def test_config_section_defaults_to_tool_name() -> None:
 
 def test_config_section_uses_default_section_override() -> None:
     class T(ArgConfig):
-        name = "t"
+        tool_name = "t"
         default_config_section = "tool.custom.sub"
 
     assert T().config_section == ("tool", "custom", "sub")
@@ -209,7 +209,7 @@ def test_help_option_raises_exit_when_true() -> None:
 class Declared(ArgConfig):
     """A tool using declarative (method-less) options."""
 
-    name = "declared"
+    tool_name = "declared"
     config_names: list[str] = []  # noqa: RUF012
 
     foo = option(name="foo", help="Foo doc", default="")
@@ -272,7 +272,7 @@ def test_declarative_options_process_end_to_end() -> None:
 
 def test_declarative_flag_negation() -> None:
     class T(ArgConfig):
-        name = "t"
+        tool_name = "t"
         config_names: list[str] = []  # noqa: RUF012
         color = option(name="color", short="C", default=True)
 

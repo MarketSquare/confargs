@@ -18,7 +18,7 @@ def _run(cls: type[ArgConfig], argv: list[str], **kw: object) -> confargs.Namesp
 class Choices(ArgConfig):
     """A tool with Literal-constrained options."""
 
-    name = "choices"
+    tool_name = "choices"
 
     console: Literal["verbose", "dotted", "quiet", "none"] = option(name="console", default="verbose")
     level: Literal[1, 2, 3] = option(name="level", type=Literal[1, 2, 3], default=1)
@@ -67,7 +67,7 @@ def test_literal_on_method_parameter() -> None:
 
 def test_argument_literal_validated() -> None:
     class Cmd(ArgConfig):
-        name = "cmd"
+        tool_name = "cmd"
         action: Literal["run", "list"] = argument(name="action")
 
     assert _run(Cmd, ["run"]).action == "run"

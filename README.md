@@ -26,7 +26,7 @@ class MyArgs(ArgConfig):
     Longer description shown in --help.
     """
 
-    name = "mytool"
+    tool_name = "mytool"
 
     # Declarative option: no method needed when there's nothing to parse.
     title = confargs.option(name="title", default="report", help="Report title.")
@@ -76,7 +76,7 @@ Highest wins: **CLI > environment variables > nearest TOML > user-directory TOML
 ### TOML files
 
 Config is read from a table named after your tool. By default that is
-`[tool.<name>]` (e.g. `[tool.mytool]`); override it with
+`[tool.<tool_name>]` (e.g. `[tool.mytool]`); override it with
 `default_config_section = "tool.custom"`. The file names searched are set with
 `config_names` (default `["pyproject.toml"]`). Both `dashed-keys` and
 `snake_case_keys` are accepted.
@@ -164,12 +164,12 @@ def log2(self, value: str = "log.html") -> str: ...
 ```
 
 The generated name comes from the class `env_var_template` (default
-`"{name}_{option}"`), formatted with the tool `name` and the `option` attribute
+`"{name}_{option}"`), formatted with the tool name and the `option` attribute
 name and upper-cased — e.g. `MYTOOL_LOG`. Override it per class:
 
 ```python
 class Args(ArgConfig):
-    name = "mytool"
+    tool_name = "mytool"
     env_var_template = "MYTOOL_CFG_{option}"  # -> MYTOOL_CFG_LOG
 ```
 
@@ -181,7 +181,7 @@ Some tools accept a whole *command line* from an environment variable —
 
 ```python
 class Args(ArgConfig):
-    name = "mytool"
+    tool_name = "mytool"
     options_env_var = "MYTOOL_OPTIONS"
 ```
 
@@ -290,7 +290,7 @@ from confargs import ArgConfig, argument
 
 
 class Runner(ArgConfig):
-    name = "runner"
+    tool_name = "runner"
 
     # A required single positional.
     suite = argument(name="suite", help="Suite file to run.")

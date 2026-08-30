@@ -7,7 +7,7 @@ from confargs.env_source import collect_env_values, env_var_name
 
 
 class Tool(ArgConfig):
-    name = "mytool"
+    tool_name = "mytool"
 
     @option(env="EXPLICIT_LOG")
     def log(self, value: str = "log.html") -> str:

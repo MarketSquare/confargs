@@ -11,7 +11,7 @@ from confargs import ArgConfig, option, split_env_args
 class Tool(ArgConfig):
     """A tool that reads extra options from TOOL_OPTIONS."""
 
-    name = "tool"
+    tool_name = "tool"
     options_env_var = "TOOL_OPTIONS"
 
     log = option(name="log", default="log.html", help="Log file.")
@@ -58,7 +58,7 @@ def test_env_var_absent_is_ignored() -> None:
 
 def test_feature_disabled_by_default() -> None:
     class Plain(ArgConfig):
-        name = "plain"
+        tool_name = "plain"
         log = option(name="log", default="log.html")
 
     ns = confargs.ConfigurationProcessor(Plain, argv=[], environ={"PLAIN_OPTIONS": "--log hacked.html"}).process()
@@ -70,7 +70,7 @@ def test_env_args_participate_in_eager_expansion(tmp_path) -> None:
     argfile.write_text("--log from_file.html\n", encoding="utf-8")
 
     class Eager(ArgConfig):
-        name = "eager"
+        tool_name = "eager"
         options_env_var = "EAGER_OPTIONS"
         log = option(name="log", default="log.html")
 

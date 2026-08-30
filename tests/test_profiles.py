@@ -39,7 +39,7 @@ loglevel = "WARN"
 
 
 class App(ArgConfig):
-    name = "myapp"
+    tool_name = "myapp"
 
     loglevel: str = option(name="loglevel", default="INFO")
     console: str = option(name="console", default="verbose")

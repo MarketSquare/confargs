@@ -29,7 +29,7 @@ from confargs import ArgConfig
 class Greeter(ArgConfig):
     """greeter - a tiny self-contained CLI built with confargs."""
 
-    name = "greeter"
+    tool_name = "greeter"
 
     # Declarative option: when there is nothing to parse or validate, an option
     # can be declared as a plain attribute — no method needed. The value passes

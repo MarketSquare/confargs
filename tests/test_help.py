@@ -12,7 +12,7 @@ class Tool(ArgConfig):
     A longer description that spans the summary.
     """
 
-    name = "mytool"
+    tool_name = "mytool"
 
     @option
     def log(self, value: str | None = "log.html") -> str | None:

@@ -29,7 +29,7 @@ CASES: list[tuple[str, list[str], dict[str, Any]]] = [
     (
         "top-level-name",
         ["--name", "My Suite", "tests/"],
-        {"name_": "My Suite"},
+        {"name": "My Suite"},
     ),
     (
         "repeatable-include",
@@ -99,12 +99,12 @@ CASES: list[tuple[str, list[str], dict[str, Any]]] = [
     (
         "attached-short-value",
         ["-Nmyname", "tests"],
-        {"name_": "myname"},
+        {"name": "myname"},
     ),
     (
         "long-equals-form",
         ["--name=Equals Suite", "tests"],
-        {"name_": "Equals Suite"},
+        {"name": "Equals Suite"},
     ),
     (
         "data-sources-argument",
@@ -180,7 +180,7 @@ def test_positional_data_sources_are_collected(tmp_path: Path) -> None:
 
 def test_double_dash_terminates_options(tmp_path: Path) -> None:
     processor, ns = run(["--name", "S", "--", "--not-an-option", "tests"], tmp_path)
-    assert ns.name_ == "S"
+    assert ns.name == "S"
     assert ns.data_sources == ["--not-an-option", "tests"]
     assert processor.positionals == []
 
@@ -224,7 +224,7 @@ def test_argumentfile_expands_options(tmp_path: Path) -> None:
     )
 
     _, ns = run(["-A", str(argfile), "tests"], tmp_path)
-    assert ns.name_ == "CI Suite"
+    assert ns.name == "CI Suite"
     assert ns.include == ["smoke"]
     assert ns.variable == [("ENV", "ci")]
     assert ns.dryrun is True
@@ -236,7 +236,7 @@ def test_argumentfile_then_cli_override(tmp_path: Path) -> None:
 
     _, ns = run(["-A", str(argfile), "--name", "FromCli", "--include", "extra", "tests"], tmp_path)
     # Scalar: the later CLI value wins.
-    assert ns.name_ == "FromCli"
+    assert ns.name == "FromCli"
     # Repeatable: both the file's and the CLI's values are kept, in order.
     assert ns.include == ["base", "extra"]
 
@@ -248,7 +248,7 @@ def test_nested_argument_files(tmp_path: Path) -> None:
     top.write_text(f"--name Nested\n--argumentfile {base}\n--include smoke\n", encoding="utf-8")
 
     _, ns = run(["-A", str(top), "tests"], tmp_path)
-    assert ns.name_ == "Nested"
+    assert ns.name == "Nested"
     assert ns.variable == [("SHARED", "yes")]
     assert ns.loglevel == "DEBUG"
     assert ns.include == ["smoke"]
@@ -260,7 +260,7 @@ def test_argumentfile_equals_and_name_value_forms(tmp_path: Path) -> None:
     argfile.write_text("--name=Equals Name\n--loglevel DEBUG\ntests/from_file\n", encoding="utf-8")
 
     processor, ns = run([f"--argumentfile={argfile}"], tmp_path)
-    assert ns.name_ == "Equals Name"
+    assert ns.name == "Equals Name"
     assert ns.loglevel == "DEBUG"
     assert ns.data_sources == ["tests/from_file"]
     assert processor.positionals == []
@@ -269,5 +269,5 @@ def test_argumentfile_equals_and_name_value_forms(tmp_path: Path) -> None:
 def test_argumentfile_from_stdin(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("sys.stdin", io.StringIO("--name FromStdin\n--dryrun\n"))
     _, ns = run(["-A", "STDIN", "tests"], tmp_path)
-    assert ns.name_ == "FromStdin"
+    assert ns.name == "FromStdin"
     assert ns.dryrun is True

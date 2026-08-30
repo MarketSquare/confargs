@@ -13,13 +13,14 @@ class ArgConfig:
     :func:`confargs.option`. Class attributes configure discovery and naming:
 
     Attributes:
-        name: The tool name. Used for the default TOML section
-            (``[tool.<name>]``) and, for options declared with ``env=True``, as
-            the ``{name}`` part of the environment variable name.
+        tool_name: The tool name. Used for the default TOML section
+            (``[tool.<tool_name>]``) and, for options declared with
+            ``env=True``, as the ``{name}`` part of the environment variable
+            name.
         config_names: File names to look for when discovering TOML config,
             in priority order.
         default_config_section: Dotted path of the TOML table to read
-            (e.g. ``"tool.mytool"``). When unset, ``tool.<name>`` is used.
+            (e.g. ``"tool.mytool"``). When unset, ``tool.<tool_name>`` is used.
         env_var_template: Template used to build the environment variable name
             for options declared with ``env=True``. Formatted with ``name``
             (the tool name) and ``option`` (the attribute name), then
@@ -35,7 +36,7 @@ class ArgConfig:
             instead of being ignored.
     """
 
-    name: str | None = None
+    tool_name: str | None = None
     config_names: list[str] = ["pyproject.toml"]  # noqa: RUF012 - documented, per-subclass override
     default_config_section: str | None = None
     env_var_template: str = "{name}_{option}"
@@ -77,10 +78,10 @@ class ArgConfig:
         """The TOML table path to read configuration from."""
         if self.default_config_section:
             return tuple(self.default_config_section.split("."))
-        base = self.name or type(self).__name__.lower()
+        base = self.resolved_tool_name
         return ("tool", base)
 
     @property
-    def tool_name(self) -> str:
+    def resolved_tool_name(self) -> str:
         """A non-optional tool name, falling back to the class name."""
-        return self.name or type(self).__name__.lower()
+        return self.tool_name or type(self).__name__.lower()

@@ -17,7 +17,7 @@ class MyArgs(ArgConfig):
     Extended docs here.
     """
 
-    name = "mytool"
+    tool_name = "mytool"
     config_names = ["pyproject.toml"]  # noqa: RUF012
 
     @option(env=True)
@@ -105,7 +105,7 @@ def test_toml_values_are_used(tmp_path: Path) -> None:
 
 def test_toml_accepts_dashed_keys(tmp_path: Path) -> None:
     class T(ArgConfig):
-        name = "t"
+        tool_name = "t"
 
         @option
         def dry_run(self, value: bool = False) -> bool:
@@ -230,7 +230,7 @@ def test_positionals_captured(tmp_path: Path) -> None:
 
 def test_required_option_without_default_raises(tmp_path: Path) -> None:
     class R(ArgConfig):
-        name = "r"
+        tool_name = "r"
 
         @option
         def token(self, value: str) -> str:
@@ -242,7 +242,7 @@ def test_required_option_without_default_raises(tmp_path: Path) -> None:
 
 def test_flag_negation_overrides_toml_true(tmp_path: Path) -> None:
     class Flags(ArgConfig):
-        name = "flags"
+        tool_name = "flags"
 
         @option
         def color(self, value: bool = True) -> bool:

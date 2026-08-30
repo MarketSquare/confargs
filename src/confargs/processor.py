@@ -117,7 +117,7 @@ class ConfigurationProcessor:
         nearest, user = self._load_toml(cli_result.values)
         env_values = collect_env_values(
             self.options,
-            self.instance.tool_name,
+            self.instance.resolved_tool_name,
             template=self.instance.env_var_template,
             environ=self.environ,
         )
@@ -296,7 +296,7 @@ class ConfigurationProcessor:
         project_files = find_project_config_files(self.cwd, config_names, ignore_git=ignore_git)
         nearest_path, nearest = first_section_with_path(project_files, section)
 
-        user_files = find_user_config_files(self.instance.tool_name, config_names)
+        user_files = find_user_config_files(self.instance.resolved_tool_name, config_names)
         user_path, user = first_section_with_path(user_files, section)
         return (
             self._apply_profiles(nearest, nearest_path, requested),
