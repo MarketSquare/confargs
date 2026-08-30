@@ -22,7 +22,69 @@ else:  # pragma: no cover - exercised only on Python 3.10
     import tomli as tomllib
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Sequence
+    from collections.abc import Iterable, Mapping, Sequence
+
+
+EXTENDS_KEY = "extends"
+
+
+def _extend_paths(extends: Any, source: Path) -> list[Path]:
+    """Resolve the raw ``extends`` value of ``source`` to a list of files.
+
+    Accepts a single string or a list of strings. Relative paths are resolved
+    against the directory containing ``source``; absolute paths are used as-is.
+    """
+    if isinstance(extends, str):
+        names = [extends]
+    elif isinstance(extends, list) and all(isinstance(item, str) for item in extends):
+        names = extends
+    else:
+        raise ConfigDiscoveryError(f"'extends' in {source} must be a string or a list of strings")
+    base_dir = source.parent
+    resolved: list[Path] = []
+    for name in names:
+        candidate = Path(name)
+        if not candidate.is_absolute():
+            candidate = base_dir / candidate
+        if not candidate.is_file():
+            raise ConfigDiscoveryError(f"extended config file not found: {candidate} (referenced from {source})")
+        resolved.append(candidate)
+    return resolved
+
+
+def resolve_extends(
+    section: Mapping[str, Any],
+    path: Path,
+    section_keys: Sequence[str],
+    *,
+    _seen: frozenset[Path] = frozenset(),
+) -> dict[str, Any]:
+    """Merge ``section`` with the config files it ``extends``, own keys winning.
+
+    ``extends`` lists other config files (relative to ``path`` or absolute)
+    whose same-named ``section_keys`` table is merged in first, in listed order,
+    so later files — and finally ``section`` itself — override earlier ones.
+    Merging is a shallow override (no list concatenation), matching the rest of
+    the precedence model. Extended files may themselves ``extends`` others;
+    cycles raise :class:`ConfigDiscoveryError`. The reserved ``extends`` key is
+    stripped from the result so it never reaches option mapping.
+    """
+    seen = _seen | {path.resolve()}
+    own = {key: value for key, value in section.items() if key != EXTENDS_KEY}
+    extends = section.get(EXTENDS_KEY)
+    if not extends:
+        return own
+    merged: dict[str, Any] = {}
+    for ext_path in _extend_paths(extends, path):
+        if ext_path.resolve() in seen:
+            raise ConfigDiscoveryError(f"circular extends detected: {ext_path} (referenced from {path})")
+        ext_section = get_section(load_toml(ext_path), section_keys)
+        if ext_section is None:
+            joined = ".".join(section_keys)
+            raise ConfigDiscoveryError(f"extended config {ext_path} has no [{joined}] section")
+        merged.update(resolve_extends(ext_section, ext_path, section_keys, _seen=seen))
+    merged.update(own)
+    return merged
 
 
 def load_toml(path: Path) -> dict[str, Any]:

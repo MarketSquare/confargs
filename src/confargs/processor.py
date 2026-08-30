@@ -20,6 +20,7 @@ from confargs.toml_source import (
     find_project_config_files,
     find_user_config_files,
     first_section_with_path,
+    resolve_extends,
 )
 
 if TYPE_CHECKING:
@@ -300,8 +301,21 @@ class ConfigurationProcessor:
         user_path, user = first_section_with_path(user_files, section)
         return (
             self._apply_profiles(nearest, nearest_path, requested),
-            self._map_toml(self._strip_profiles(user), user_path),
+            self._map_toml(self._strip_profiles(self._resolve_extends(user, user_path)), user_path),
         )
+
+    def _resolve_extends(self, section: Mapping[str, Any] | None, path: Path | None) -> dict[str, Any]:
+        """Merge a raw section with any config files it ``extends``.
+
+        Returns an empty mapping when no section was found. Relative ``extends``
+        paths need the source file location, so extends is only resolved when
+        ``path`` is known; the reserved ``extends`` key is stripped either way.
+        """
+        if not section:
+            return {}
+        if path is None:
+            return {key: value for key, value in section.items() if key != "extends"}
+        return resolve_extends(section, path, self.instance.config_section)
 
     @staticmethod
     def _strip_profiles(section: Mapping[str, Any] | None) -> dict[str, Any]:
@@ -327,7 +341,7 @@ class ConfigurationProcessor:
             if requested:
                 raise ConfigDiscoveryError("--profile was given but no configuration file was found")
             return {}
-        data = dict(section)
+        data = self._resolve_extends(section, path)
         profiles = data.pop("profiles", {})
         if requested:
             if not isinstance(profiles, dict) or not profiles:
