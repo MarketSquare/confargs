@@ -30,7 +30,7 @@ def _metavar(attr: str, opt: Option) -> str:
     vt = resolve_value_type(opt)
     if vt.is_flag:
         return ""
-    base = attr.upper()
+    base = "{" + ",".join(str(choice) for choice in vt.choices) + "}" if vt.choices is not None else attr.upper()
     return f" {base}..." if vt.is_list else f" {base}"
 
 
