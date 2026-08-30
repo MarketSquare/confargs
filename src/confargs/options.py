@@ -13,6 +13,7 @@ accessing it on the class yields the :class:`Option` object for introspection.
 from __future__ import annotations
 
 import inspect
+import typing
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from types import MethodType
@@ -70,6 +71,7 @@ class Option:
         self.env = env
         self.is_eager = is_eager
         self.attr_name: str = func.__name__ if func is not None else (name or "")
+        self.owner: type | None = None
         # Names the option *wants*; short-name collisions are resolved later.
         self.long_names: list[str] = []
         self.explicit_shorts: list[str] = []
@@ -77,6 +79,7 @@ class Option:
         self._derive_default_names()
 
     def __set_name__(self, owner: type, name: str) -> None:
+        self.owner = owner
         self.attr_name = name
         self._derive_default_names()
 
@@ -164,11 +167,28 @@ class Option:
     @property
     def raw_annotation(self) -> Any:
         if self.func is None:
-            return self.declared_type
+            if self.declared_type is not MISSING:
+                return self.declared_type
+            return self._attribute_annotation()
         param = self.value_parameter
         if param.annotation is inspect.Parameter.empty:
             return MISSING
         return param.annotation
+
+    def _attribute_annotation(self) -> Any:
+        """Resolve the class attribute annotation, e.g. ``name: str = option(...)``.
+
+        Returns :data:`MISSING` when the owner has no annotation for this
+        attribute (or the annotations cannot be resolved), so type inference
+        falls back to the declared default.
+        """
+        if self.owner is None:
+            return MISSING
+        try:
+            hints = typing.get_type_hints(self.owner)
+        except Exception:  # unresolved forward refs fall back to inference
+            return MISSING
+        return hints.get(self.attr_name, MISSING)
 
     def __repr__(self) -> str:
         names = "|".join([*self.long_names, *self.explicit_shorts])
@@ -236,8 +256,9 @@ def option(
             makes the option a flag; a ``None`` default makes the value
             optional (``str | None``).
         type: Explicit value type for a declarative option (e.g. ``int`` or
-            ``list[str]``). When omitted the type is inferred from ``default``
-            and otherwise falls back to ``str``.
+            ``list[str]``). When omitted the type is taken from the attribute
+            annotation (``attr: int = option(...)``) if present, then inferred
+            from ``default``, and otherwise falls back to ``str``.
         cli: When false, the option is not exposed on the command line (it has
             no CLI names and is skipped in ``--help``). Use for options that
             should only come from config files or the environment.

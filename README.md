@@ -60,7 +60,9 @@ Options come in two flavours:
 - **Declarative** (`attr = confargs.option(name=..., help=...)`): a plain class
   attribute with no method, for simple values that need no custom handling. The
   value passes straight through coercion. Set `default=` (a `bool` makes it a
-  flag, `None` makes it optional) and `type=` to control the value type.
+  flag, `None` makes it optional) and `type=` to control the value type — or
+  annotate the attribute directly (`attr: int = confargs.option(...)`), which
+  confargs reads as the value type.
 
 ## Precedence
 
