@@ -6,11 +6,13 @@ import inspect
 from textwrap import shorten
 from typing import TYPE_CHECKING
 
+from confargs.arguments import collect_arguments
 from confargs.cli import negation_name
 from confargs.coercion import resolve_value_type
 from confargs.options import collect_options, resolve_names
 
 if TYPE_CHECKING:
+    from confargs.arguments import Argument
     from confargs.base import ArgConfig
     from confargs.options import NameTable, Option
 
@@ -42,7 +44,7 @@ def _invocation(attr: str, opt: Option, table: NameTable) -> str:
     return ", ".join(names) + _metavar(attr, opt)
 
 
-def _summary(opt: Option) -> str:
+def _summary(opt: Option | Argument) -> str:
     doc = opt.doc.strip()
     if not doc:
         return ""
@@ -50,10 +52,20 @@ def _summary(opt: Option) -> str:
     return shorten(first_paragraph, width=200, placeholder="...")
 
 
+def _argument_invocation(arg: Argument) -> str:
+    metavar = arg.metavar
+    if arg.is_variadic:
+        return f"{metavar}..."
+    if not arg.required:
+        return f"[{metavar}]"
+    return metavar
+
+
 def format_help(instance: ArgConfig) -> str:
     """Build the full ``--help`` text for a config instance."""
     cls = type(instance)
     options = collect_options(cls)
+    arguments = collect_arguments(cls)
     table = resolve_names(options)
 
     lines: list[str] = []
@@ -62,20 +74,32 @@ def format_help(instance: ArgConfig) -> str:
         lines.append(doc)
         lines.append("")
 
+    arg_invocations = {attr: _argument_invocation(arg) for attr, arg in arguments.items()}
     invocations = {attr: _invocation(attr, opt, table) for attr, opt in options.items() if opt.cli}
-    pad = min(max((len(text) for text in invocations.values()), default=0), _MAX_INVOCATION_WIDTH)
+    pad = min(
+        max((len(text) for text in [*invocations.values(), *arg_invocations.values()]), default=0),
+        _MAX_INVOCATION_WIDTH,
+    )
+
+    if arguments:
+        lines.append("Arguments:")
+        for attr, arg in arguments.items():
+            _append_entry(lines, arg_invocations[attr], _summary(arg), pad)
+        lines.append("")
 
     lines.append("Options:")
     for attr, opt in options.items():
         if not opt.cli:
             continue
-        invocation = invocations[attr]
-        summary = _summary(opt)
-        if not summary:
-            lines.append(f"  {invocation}")
-        elif len(invocation) <= pad:
-            lines.append(f"  {invocation.ljust(pad)}  {summary}")
-        else:
-            lines.append(f"  {invocation}")
-            lines.append(f"  {' ' * pad}  {summary}")
+        _append_entry(lines, invocations[attr], _summary(opt), pad)
     return "\n".join(lines)
+
+
+def _append_entry(lines: list[str], invocation: str, summary: str, pad: int) -> None:
+    if not summary:
+        lines.append(f"  {invocation}")
+    elif len(invocation) <= pad:
+        lines.append(f"  {invocation.ljust(pad)}  {summary}")
+    else:
+        lines.append(f"  {invocation}")
+        lines.append(f"  {' ' * pad}  {summary}")

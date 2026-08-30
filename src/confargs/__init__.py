@@ -7,6 +7,7 @@ Declare options as methods on an :class:`ArgConfig` subclass, decorate them with
 from __future__ import annotations
 
 from confargs.argfile import read_argument_file, split_argument_file
+from confargs.arguments import Argument, argument, collect_arguments
 from confargs.base import ArgConfig
 from confargs.exceptions import (
     MISSING,
@@ -27,6 +28,7 @@ __all__ = [
     "MISSING",
     "ArgConfig",
     "ArgConfigError",
+    "Argument",
     "CliUsageError",
     "ConfigDiscoveryError",
     "ConfigurationProcessor",
@@ -36,6 +38,8 @@ __all__ = [
     "OptionDefinitionError",
     "OptionValueError",
     "__version__",
+    "argument",
+    "collect_arguments",
     "collect_options",
     "option",
     "read_argument_file",
