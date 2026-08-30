@@ -246,6 +246,9 @@ class ConfigurationProcessor:
         return attr, argv[index + 1], index, index + 2
 
     def _scan_short_eager(self, argv: Sequence[str], index: int, token: str) -> tuple[str, Any, int, int] | None:
+        # Only the first character of a short cluster is inspected for an eager
+        # option; eager options (e.g. ``--argumentfile``/``-A``) are expected to
+        # stand alone rather than be bundled like ``-xA``.
         name = token[:2]
         attr = self.table.short_to_attr.get(name)
         if attr not in self.eager:

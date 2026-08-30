@@ -261,6 +261,10 @@ Combine them as needed, e.g. a CLI-only switch is `@option(config=False)` with
   straight through. Raise `confargs.OptionValueError` to reject a value.
 - Boolean options can be negated on the command line: `--verbose` sets it to
   `True`, `--no-verbose` sets it to `False`.
+- A value that itself looks like a registered option (e.g. passing `-v` as the
+  value of `--name` when `-v` is a known short option) is otherwise read as the
+  next option. Use the attached form to force it as a value: `--name=-v` (or
+  `-n-v` for a short option).
 
 ### Restricting a value to a set of choices
 
