@@ -102,6 +102,53 @@ By default (`strict_config = True`) unknown keys — and any option declared wit
 `config=False` — found in the config section raise an error, which catches typos
 early. Set `strict_config = False` on your class to silently ignore them instead.
 
+### Profiles
+
+A **profile** is a named set of config overrides declared under
+`<section>.profiles.<name>` in the same TOML file as your base section. Select
+one or more at runtime with the built-in `--profile` option to layer them on top
+of the base config:
+
+```toml
+[tool.mytool]
+loglevel = "INFO"
+console = "verbose"
+
+[tool.mytool.profiles.ci]
+loglevel = "DEBUG"
+console = "dotted"
+
+[tool.mytool.profiles.dev]
+inherits = ["ci"]      # pull in ci's values first...
+console = "verbose"    # ...then override
+```
+
+```console
+$ mytool --profile ci            # exact name
+$ mytool --profile 'ci-*'        # glob pattern
+$ mytool --profile ci --profile extra   # multiple, merged in order
+```
+
+Semantics (a deliberately small subset of what a full profile system offers):
+
+- **Selection** is by exact name or `fnmatch` glob; every pattern must match at
+  least one profile or a `ConfigDiscoveryError` is raised.
+- **Override, not extend** — a profile's values replace the base (and earlier
+  profiles); this holds for lists too (they are replaced, not appended).
+- **`inherits`** (a name or list of names) merges the parent profile(s) first,
+  then the profile's own keys. Inheritance is resolved recursively; cycles are
+  rejected.
+- **`precedence`** (integer, default `0`) orders multiple selected profiles:
+  lower is applied first, so a higher `precedence` wins on conflicts. Ties keep
+  selection order.
+- **`enabled = false`** skips a *directly selected* profile (inherited parents
+  always contribute).
+
+Profiles sit in the TOML layer of the precedence chain, so command-line
+arguments and environment variables still win over any profile value. Profiles
+are read from the nearest project config only; `inherits`, `precedence` and
+`enabled` are reserved keys, not options.
+
 ### Environment variables
 
 Reading from the environment is **opt-in per option**. Pass `env=True` to use a
