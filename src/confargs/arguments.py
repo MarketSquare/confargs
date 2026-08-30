@@ -20,6 +20,7 @@ last one declared, so the positional-to-argument assignment stays unambiguous.
 from __future__ import annotations
 
 import inspect
+import typing
 from collections.abc import Callable
 from types import MethodType
 from typing import Any, overload
@@ -58,8 +59,10 @@ class Argument:
         self.config = config
         self.explicit_metavar = metavar
         self.attr_name: str = func.__name__ if func is not None else (name or "")
+        self.owner: type | None = None
 
     def __set_name__(self, owner: type, name: str) -> None:
+        self.owner = owner
         self.attr_name = name
 
     def __call__(self, func: ArgumentMethod) -> Argument:
@@ -142,11 +145,23 @@ class Argument:
     @property
     def raw_annotation(self) -> Any:
         if self.func is None:
-            return self.declared_type
+            if self.declared_type is not MISSING:
+                return self.declared_type
+            return self._attribute_annotation()
         param = self.value_parameter
         if param.annotation is inspect.Parameter.empty:
             return MISSING
         return param.annotation
+
+    def _attribute_annotation(self) -> Any:
+        """Resolve the class attribute annotation, e.g. ``port: int = argument(...)``."""
+        if self.owner is None:
+            return MISSING
+        try:
+            hints = typing.get_type_hints(self.owner)
+        except Exception:  # unresolved forward refs fall back to inference
+            return MISSING
+        return hints.get(self.attr_name, MISSING)
 
     def __repr__(self) -> str:
         return f"Argument({self.attr_name!r}, nargs={self.nargs!r}, config={self.config})"
@@ -196,8 +211,9 @@ def argument(
         default: Default value used when no positional (and no config value) is
             supplied. A ``"*"`` argument defaults to an empty list.
         type: Explicit value type for a declarative argument (e.g. ``int`` or
-            ``list[str]``). When omitted the type is inferred from the
-            annotation/``default`` and otherwise falls back to ``str``.
+            ``list[str]``). When omitted the type is taken from the attribute
+            annotation (``count: int = argument(...)``) if present, then inferred
+            from the annotation/``default``, and otherwise falls back to ``str``.
         nargs: How many positionals to consume: ``1`` (exactly one, the
             default), ``"?"`` (optional), ``"*"`` (zero or more) or ``"+"`` (one
             or more). ``"*"``/``"+"`` collect into a list.
