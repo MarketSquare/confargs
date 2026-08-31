@@ -164,3 +164,50 @@ def test_argument_appears_in_help() -> None:
     assert "SRC" in text
     assert "[COUNT]" in text
     assert "REST..." in text
+
+
+def test_argument_double_bound_method_rejected() -> None:
+    def method(self: object, value: str) -> str:
+        return value
+
+    arg = argument(name="dup")(method)
+    with pytest.raises(OptionDefinitionError, match="already has a method bound"):
+        arg(method)
+
+
+def test_argument_method_without_value_parameter_rejected() -> None:
+    class Bad(ArgConfig):
+        tool_name = "bad"
+
+        @argument(name="thing")
+        def thing(self) -> str:  # type: ignore[empty-body]
+            """Missing the value parameter."""
+
+    with pytest.raises(OptionDefinitionError, match="must accept a value parameter"):
+        _process(Bad, ["x"])
+
+
+def test_declarative_argument_has_no_value_parameter() -> None:
+    arg = argument(name="thing")
+    with pytest.raises(OptionDefinitionError, match="has no value parameter"):
+        _ = arg.value_parameter
+
+
+def test_argument_explicit_metavar_used_in_help() -> None:
+    class WithMeta(ArgConfig):
+        tool_name = "withmeta"
+        src = argument(name="src", metavar="PATH", help="A path.")
+
+    from confargs.help import format_help
+
+    assert "PATH" in format_help(WithMeta())
+
+
+def test_declarative_argument_doc_from_help() -> None:
+    arg = argument(name="thing", help="  A thing.  ")
+    assert arg.doc == "A thing."
+
+
+def test_method_argument_doc_from_docstring() -> None:
+    args = collect_arguments(Basic)
+    assert args["rest"].doc.startswith("Remaining files")
