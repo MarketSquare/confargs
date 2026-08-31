@@ -47,13 +47,30 @@ def negation_name(long_name: str) -> str:
 
 
 def _negated_flag_attr(name: str, table: NameTable, flags: set[str]) -> str | None:
-    """If ``name`` is a ``--no-<flag>`` negation of a known flag, return its attr."""
-    if not name.startswith("--no-"):
-        return None
-    base = f"--{name[len('--no-') :]}"
-    attr = table.long_to_attr.get(base)
-    if attr is not None and attr in flags:
-        return attr
+    """If ``name`` is a ``--no-<flag>`` negation of a known flag, return its attr.
+
+    Supports the canonical ``--no-<name>`` form (with lenient resolution of the
+    base name when case/hyphen-insensitive matching is enabled) and, when
+    hyphens are ignorable, the joined ``--no<name>`` form (e.g. ``--nostatusrc``
+    negating ``--statusrc``).
+    """
+    # Canonical separator form: --no-<base>. The prefix match is case-insensitive
+    # when lenient case matching is on so --No-Foo works too.
+    prefix = "--no-"
+    matches_prefix = name.lower().startswith(prefix) if table.case_insensitive else name.startswith(prefix)
+    if matches_prefix:
+        attr = table.long_attr(f"--{name[len(prefix) :]}")
+        if attr is not None and attr in flags:
+            return attr
+
+    # Joined form (no separator): only meaningful when hyphens are ignorable, so
+    # --nostatusrc normalises the same way --no-statusrc does.
+    if table.ignore_hyphens:
+        normalized = table.normalize_bare(name[2:])
+        if normalized.startswith("no"):
+            attr = table.long_normalized_to_attr.get(normalized[2:])
+            if attr is not None and attr in flags:
+                return attr
     return None
 
 
@@ -114,7 +131,7 @@ def _handle_long(
     list_opts: set[str],
 ) -> int:
     name, sep, inline = token.partition("=")
-    attr = table.long_to_attr.get(name)
+    attr = table.long_attr(name)
     if attr is None:
         negated = _negated_flag_attr(name, table, flags)
         if negated is not None:

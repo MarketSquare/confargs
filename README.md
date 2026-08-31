@@ -266,6 +266,32 @@ Combine them as needed, e.g. a CLI-only switch is `@option(config=False)` with
   next option. Use the attached form to force it as a value: `--name=-v` (or
   `-n-v` for a short option).
 
+### Lenient command-line names (case- and hyphen-insensitive)
+
+By default long options must be spelled exactly as declared. Two opt-in class
+attributes relax this **on the command line only** (config-file keys are always
+matched exactly):
+
+```python
+class MyArgs(ArgConfig):
+    cli_case_insensitive = True  # --VariableFile == --variablefile
+    cli_ignore_hyphens = True  # --variable-file == --variablefile
+
+    variablefile: list[str] = option(name="variablefile", default=list)
+    statusrc: bool = option(name="statusrc", default=False)
+```
+
+With both enabled, `--variablefile`, `--variable-file`, `--VariableFile` and
+`--VARIABLE-FILE` all resolve to the same option, and a flag can be negated as
+`--no-statusrc`, `--nostatusrc` or `--No-StatusRc`. Enable only one attribute to
+relax just case or just hyphens. If two options would collide once normalised
+(e.g. `--foo-bar` and `--foobar` with `cli_ignore_hyphens`), the lenient
+fallback is dropped for that pair and only their exact spellings work.
+
+These toggles never affect configuration files: a `[tool.mytool]` table must use
+the option's declared name (its underscore/hyphen variants are still
+interchangeable, but case is significant).
+
 ### Restricting a value to a set of choices
 
 Annotate an option (or argument) with `typing.Literal[...]` to constrain it to a

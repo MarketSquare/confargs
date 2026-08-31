@@ -86,7 +86,11 @@ class ConfigurationProcessor:
         if clash:
             names = ", ".join(sorted(clash))
             raise OptionDefinitionError(f"names used by both an option and an argument: {names}")
-        self.table = resolve_names(self.options)
+        self.table = resolve_names(
+            self.options,
+            case_insensitive=self.instance.cli_case_insensitive,
+            ignore_hyphens=self.instance.cli_ignore_hyphens,
+        )
         self.value_types = {attr: resolve_value_type(opt) for attr, opt in self.options.items()}
         self.arg_value_types = {attr: self._argument_value_type(arg) for attr, arg in self.arguments.items()}
         self.flags = {attr for attr, vt in self.value_types.items() if vt.is_flag}
@@ -234,7 +238,7 @@ class ConfigurationProcessor:
 
     def _scan_long_eager(self, argv: Sequence[str], index: int, token: str) -> tuple[str, Any, int, int] | None:
         name, sep, inline = token.partition("=")
-        attr = self.table.long_to_attr.get(name)
+        attr = self.table.long_attr(name)
         if attr not in self.eager:
             return None
         if attr in self.flags:

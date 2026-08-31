@@ -302,24 +302,72 @@ class NameTable:
     long_to_attr: dict[str, str] = field(default_factory=dict)
     short_to_attr: dict[str, str] = field(default_factory=dict)
     attr_to_names: dict[str, list[str]] = field(default_factory=dict)
+    # Fallback map from a *normalised* bare long name to its attribute, used
+    # only when lenient CLI matching (case- and/or hyphen-insensitive) is on.
+    long_normalized_to_attr: dict[str, str] = field(default_factory=dict)
+    case_insensitive: bool = False
+    ignore_hyphens: bool = False
+
+    @property
+    def lenient(self) -> bool:
+        """Whether any lenient (case/hyphen-insensitive) long matching is on."""
+        return self.case_insensitive or self.ignore_hyphens
+
+    def normalize_bare(self, bare: str) -> str:
+        """Canonicalise a bare long name for lenient matching.
+
+        Applies the enabled leniencies: lower-casing (``case_insensitive``) and
+        hyphen removal (``ignore_hyphens``). Used both to build the fallback
+        map and to look tokens up in it.
+        """
+        if self.case_insensitive:
+            bare = bare.lower()
+        if self.ignore_hyphens:
+            bare = bare.replace("-", "")
+        return bare
+
+    def long_attr(self, token: str) -> str | None:
+        """Resolve a ``--long`` token to an attribute name.
+
+        Tries an exact match first, then — when lenient matching is enabled —
+        the normalised fallback map, so ``--variable-file``, ``--variablefile``
+        and ``--VariableFile`` can all resolve to the same option.
+        """
+        attr = self.long_to_attr.get(token)
+        if attr is not None:
+            return attr
+        if not self.lenient or not token.startswith("--"):
+            return None
+        return self.long_normalized_to_attr.get(self.normalize_bare(token[2:]))
 
     def attr_for(self, token: str) -> str | None:
         if token.startswith("--"):
-            return self.long_to_attr.get(token)
+            return self.long_attr(token)
         if token.startswith("-"):
             return self.short_to_attr.get(token)
         return None
 
 
-def resolve_names(options: Mapping[str, Option]) -> NameTable:
+def resolve_names(
+    options: Mapping[str, Option],
+    *,
+    case_insensitive: bool = False,
+    ignore_hyphens: bool = False,
+) -> NameTable:
     """Assign final CLI names to options, resolving short-name collisions.
 
     Long names and explicitly requested short names are authoritative and must
     be unique. Auto-derived short names (first letter of the method name) are
     only assigned when still free; otherwise they are silently skipped so that
     an option still works through its long name.
+
+    When ``case_insensitive`` and/or ``ignore_hyphens`` is set, a fallback map
+    is built so long options can also be matched with the corresponding
+    leniency on the command line (config-file keys stay exact). Long names that
+    would collide once normalised are dropped from the fallback map — they still
+    work through their exact spelling.
     """
-    table = NameTable()
+    table = NameTable(case_insensitive=case_insensitive, ignore_hyphens=ignore_hyphens)
 
     # Pass 1: long names and explicit short names (must be unique).
     for attr, opt in options.items():
@@ -350,6 +398,19 @@ def resolve_names(options: Mapping[str, Option]) -> NameTable:
                 table.short_to_attr[candidate] = attr
                 table.attr_to_names[attr].append(candidate)
                 break
+
+    # Pass 3: normalised fallback map for lenient long matching.
+    if table.lenient:
+        ambiguous: set[str] = set()
+        for long, attr in table.long_to_attr.items():
+            key = table.normalize_bare(long[2:])
+            existing = table.long_normalized_to_attr.get(key)
+            if existing is not None and existing != attr:
+                ambiguous.add(key)
+            else:
+                table.long_normalized_to_attr[key] = attr
+        for key in ambiguous:
+            table.long_normalized_to_attr.pop(key, None)
 
     return table
 

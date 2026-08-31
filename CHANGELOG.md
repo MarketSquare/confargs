@@ -31,16 +31,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * drop unused first_section helper ([#33](https://github.com/MarketSquare/confargs/issues/33)) ([0fb6618](https://github.com/MarketSquare/confargs/commit/0fb66185def6ca5ef568c1aac933a1ad51afcc29))
 
-## [Unreleased]
-
-### Bug Fixes
-
-* infer the value type of a factory `default` (e.g. `option(default=list)`)
-  from the value it produces, so an unannotated list option is now correctly
-  treated as repeatable instead of collapsing to a scalar.
-* fall back to the raw annotation instead of raising `NameError` when a method
-  option's type hints contain an unresolvable forward reference.
-
 ## [0.4.0](https://github.com/MarketSquare/confargs/compare/v0.3.0...v0.4.0) (2026-08-30)
 
 
@@ -98,50 +88,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * single-source version and add CHANGELOG ([690efd9](https://github.com/MarketSquare/confargs/commit/690efd9b7017270a262ab13d75641891c73ca959))
 
-## [Unreleased]
-
-### Added
-
-- Options can now be declared **without a method**, as a plain class attribute:
-  `title = option(name="title", default="report", help="Report title.")`. Such
-  declarative options pass their value straight through coercion — use them for
-  simple values that need no custom parsing or validation. `default=` sets the
-  default (a `bool` makes it a flag, `None` makes it optional) and `type=`
-  overrides the inferred value type. Method-based `@option` declarations are
-  unchanged.
-
-### Changed
-
-- Reworked option naming: `@option` now takes `name=` (the long option name,
-  without dashes) and `short=` (a single-character short name) instead of the
-  combined `names="--long/-s"` spec. An explicit `name` opts out of the
-  auto-derived short — pass `short=` to keep one. **Migration (pre-1.0):**
-  replace `names="--console/-c"` with `name="console", short="c"`.
-- Environment-variable reading is now **opt-in per option** via `@option(env=...)`:
-  `env=True` uses a name from the class `env_var_template` (default
-  `"{name}_{option}"`, upper-cased), and `env="NAME"` sets an explicit name.
-  **Breaking:** the `envvar=` option argument and the `auto_env_vars` class
-  attribute are removed; add `env=` to each option that should read the
-  environment. The new `env_var_template` class attribute customises generated
-  names.
-- Replaced the single `@option(cli_only=True)` flag with two independent
-  toggles: `@option(cli=False)` hides an option from the command line, and
-  `@option(config=False)` stops it being loaded from TOML config files. The
-  built-in discovery options now use `config=False`. **Breaking:** `cli_only` is
-  no longer accepted.
-- Renamed the distribution and import package from `argconfig` to **`confargs`**
-  (the `argconfig` name was already taken on PyPI). The `ArgConfig` base class
-  keeps its name.
-
-### Added
-
-- Eager options (`@option(is_eager=True)`): resolved before every other source,
-  directly against `argv`. An eager option's method returns tokens that replace
-  its own arguments, enabling argument-file expansion.
-- `confargs.split_argument_file` / `confargs.read_argument_file` helpers that
-  parse Robot Framework-style argument files (comment lines, `name value` and
-  `name=value` forms) into argv tokens, including nested argument files.
-
 ## [0.1.0] - 2026-08-28
 
 Initial development release.
@@ -170,5 +116,4 @@ Initial development release.
   (Python 3.10-3.13 on Linux and Windows) and a PyPI trusted-publishing
   workflow.
 
-[Unreleased]: https://github.com/MarketSquare/confargs/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/MarketSquare/confargs/releases/tag/v0.1.0
