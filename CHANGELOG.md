@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > stabilising. Minor (`0.X.0`) releases may include breaking changes; patch
 > (`0.x.Y`) releases are reserved for backwards-compatible fixes.
 
+## [0.8.0](https://github.com/MarketSquare/confargs/compare/v0.7.0...v0.8.0) (2026-08-31)
+
+
+### Features
+
+* add argument-file BOM handling and expandvars pragma ([#40](https://github.com/MarketSquare/confargs/issues/40)) ([daabb4a](https://github.com/MarketSquare/confargs/commit/daabb4add7cb1a879937f446f6d61ca6c2803947))
+
 ## [0.7.0](https://github.com/MarketSquare/confargs/compare/v0.6.0...v0.7.0) (2026-08-31)
 
 
