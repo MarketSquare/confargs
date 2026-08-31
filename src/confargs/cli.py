@@ -139,6 +139,9 @@ def _handle_long(
                 raise CliUsageError(f"option {name!r} does not take a value")
             _store(result, negated, False, list_opts)
             return index
+        ambiguous = table.abbrev_matches(name)
+        if len(ambiguous) > 1:
+            raise CliUsageError(f"ambiguous option {name!r} could match {', '.join(ambiguous)}")
         raise CliUsageError(f"unknown option {name!r}")
 
     if attr in flags:

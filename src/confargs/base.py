@@ -42,6 +42,12 @@ class ArgConfig:
             on the command line (``--variable-file`` resolves to
             ``--variablefile``, and ``--nostatusrc`` negates ``--statusrc``).
             Disabled by default. Config-file keys are always matched exactly.
+        cli_allow_abbrev: When true, an unambiguous prefix of a long option
+            name is accepted on the command line (``--rem`` resolves to
+            ``--removekeywords``). An exact match always wins over a prefix, and
+            an ambiguous prefix raises an error. Composes with the case- and
+            hyphen-insensitive settings. Disabled by default. Short options are
+            never abbreviated and config-file keys are always matched exactly.
     """
 
     tool_name: str | None = None
@@ -52,6 +58,7 @@ class ArgConfig:
     strict_config: bool = True
     cli_case_insensitive: bool = False
     cli_ignore_hyphens: bool = False
+    cli_allow_abbrev: bool = False
 
     @option(name="help", short="h", config=False)
     def help(self, value: bool = False) -> bool:
