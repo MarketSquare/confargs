@@ -345,6 +345,15 @@ class Args(ArgConfig):
 `ConfigurationProcessor(Args, argv=[...])` accepts an explicit argument list;
 when omitted it falls back to `sys.argv[1:]`.
 
+Argument files are read as `utf-8-sig`, so a leading UTF-8 BOM is ignored. Each
+line is stripped; blank lines and `#` comments are skipped; an option line is
+split into a name and value on the first space or `=`. When the first line is a
+truthy `# expandvars: <bool>` pragma, the whole file is expanded first —
+`$NAME`, `${NAME}` and `${NAME=default}` pull from the environment (pass a
+custom `environ=` mapping to `read_argument_file`/`split_argument_file` to
+override), `$$` is a literal `$`, and an unset variable without a default (or a
+malformed reference) raises `CliUsageError`.
+
 ## Positional arguments
 
 Options are addressed by name; **arguments** are positional — filled from the

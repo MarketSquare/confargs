@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import pytest
@@ -142,3 +143,63 @@ def test_eager_option_returning_bare_string_is_rejected() -> None:
 
     with pytest.raises(OptionDefinitionError, match="bare string"):
         ConfigurationProcessor(BadConfig, argv=["--broken", "x"]).process()
+
+
+def test_read_argument_file_strips_utf8_bom(tmp_path: Path) -> None:
+    af = tmp_path / "bom.txt"
+    af.write_text("\ufeff--name-opt fromfile\n--verbose\n", encoding="utf-8")
+    assert read_argument_file(af) == ["--name-opt", "fromfile", "--verbose"]
+
+
+def test_expandvars_pragma_expands_from_environ() -> None:
+    text = "# expandvars: true\n--name-opt ${WHO}\n"
+    assert split_argument_file(text, environ={"WHO": "world"}) == ["--name-opt", "world"]
+
+
+def test_expandvars_pragma_dollar_name_form() -> None:
+    text = "# expandvars: yes\n--name-opt $WHO\n"
+    assert split_argument_file(text, environ={"WHO": "world"}) == ["--name-opt", "world"]
+
+
+def test_expandvars_pragma_default_when_unset() -> None:
+    text = "# expandvars: true\n--name-opt ${WHO=fallback}\n"
+    assert split_argument_file(text, environ={}) == ["--name-opt", "fallback"]
+
+
+def test_expandvars_pragma_expands_whole_line() -> None:
+    text = "# expandvars: true\n${LINE=--name-opt whole}\n"
+    assert split_argument_file(text, environ={}) == ["--name-opt", "whole"]
+
+
+def test_expandvars_pragma_escaped_dollar() -> None:
+    text = "# expandvars: true\n--name-opt $$WHO\n"
+    assert split_argument_file(text, environ={"WHO": "world"}) == ["--name-opt", "$WHO"]
+
+
+def test_expandvars_pragma_disabled_leaves_text() -> None:
+    text = "# expandvars: false\n--name-opt ${WHO}\n"
+    assert split_argument_file(text, environ={"WHO": "world"}) == ["--name-opt", "${WHO}"]
+
+
+def test_expandvars_no_pragma_leaves_text() -> None:
+    text = "--name-opt ${WHO}\n"
+    assert split_argument_file(text, environ={"WHO": "world"}) == ["--name-opt", "${WHO}"]
+
+
+def test_expandvars_unset_variable_errors() -> None:
+    text = "# expandvars: true\n--name-opt ${MISSING}\n"
+    with pytest.raises(CliUsageError, match=r"Variable 'MISSING' does not exist\."):
+        split_argument_file(text, environ={})
+
+
+def test_expandvars_malformed_reference_errors() -> None:
+    text = "# expandvars: true\n--name-opt $1bad\n"
+    with pytest.raises(CliUsageError, match="Processing argument file failed"):
+        split_argument_file(text, environ={})
+
+
+def test_read_argument_file_expandvars_error_includes_path(tmp_path: Path) -> None:
+    af = tmp_path / "args.txt"
+    af.write_text("# expandvars: true\n--name-opt ${MISSING}\n", encoding="utf-8")
+    with pytest.raises(CliUsageError, match=re.escape(f"Processing argument file '{af}' failed")):
+        read_argument_file(af, environ={})
