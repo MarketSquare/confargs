@@ -149,3 +149,23 @@ def test_coerce_list_of_ints() -> None:
 def test_coerce_str_from_toml_int() -> None:
     # TOML may supply an int where the option wants a string.
     assert coerce_value(7, _vt("text")) == "7"
+
+
+def test_method_option_with_unresolvable_annotation_falls_back_to_str() -> None:
+    # ``get_type_hints`` raises on the undefined forward ref; resolution should
+    # fall back to analysing the raw annotation rather than surfacing NameError.
+    def bad(self: object, value: NoSuchType) -> NoSuchType:  # type: ignore[name-defined]  # noqa: F821
+        return value
+
+    vt = resolve_value_type(option(bad))
+    assert vt.base is str
+    assert vt.is_list is False
+
+
+def test_declarative_factory_default_that_raises_falls_back_to_str() -> None:
+    def boom() -> list[str]:
+        raise RuntimeError("cannot build default")
+
+    vt = resolve_value_type(option(name="x", default=boom))
+    assert vt.base is str
+    assert vt.is_list is False

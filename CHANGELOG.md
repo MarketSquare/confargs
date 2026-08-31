@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > stabilising. Minor (`0.X.0`) releases may include breaking changes; patch
 > (`0.x.Y`) releases are reserved for backwards-compatible fixes.
 
+## [Unreleased]
+
+### Bug Fixes
+
+* infer the value type of a factory `default` (e.g. `option(default=list)`)
+  from the value it produces, so an unannotated list option is now correctly
+  treated as repeatable instead of collapsing to a scalar.
+* fall back to the raw annotation instead of raising `NameError` when a method
+  option's type hints contain an unresolvable forward reference.
+
 ## [0.4.0](https://github.com/MarketSquare/confargs/compare/v0.3.0...v0.4.0) (2026-08-30)
 
 

@@ -71,3 +71,32 @@ def test_method_option_with_factory_default() -> None:
             return value
 
     assert _run(Method, []).names == []
+
+
+def test_unannotated_list_factory_is_repeatable() -> None:
+    # A factory default (``default=list``) is a list even without an annotation:
+    # type inference samples the factory rather than using ``type(list)``.
+    class Bare(ArgConfig):
+        tool_name = "bare"
+        tags = option(name="tags", default=list)
+
+    assert _run(Bare, []).tags == []
+    assert _run(Bare, ["--tags", "a", "--tags", "b"]).tags == ["a", "b"]
+
+
+def test_unannotated_lambda_list_factory_is_repeatable() -> None:
+    class Seeded(ArgConfig):
+        tool_name = "seeded"
+        tags = option(name="tags", default=lambda: ["seed"])
+
+    assert _run(Seeded, []).tags == ["seed"]
+    assert _run(Seeded, ["--tags", "x", "--tags", "y"]).tags == ["x", "y"]
+
+
+def test_unannotated_variadic_argument_factory_is_list() -> None:
+    class Args(ArgConfig):
+        tool_name = "args"
+        extra = argument(name="extra", nargs="*", default=list)
+
+    assert _run(Args, []).extra == []
+    assert _run(Args, ["p", "q"]).extra == ["p", "q"]
