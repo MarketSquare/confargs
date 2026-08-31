@@ -159,9 +159,3 @@ def first_section_with_path(
         if found is not None:
             return path, found
     return None, None
-
-
-def first_section(files: Iterable[Path], section: Sequence[str]) -> dict[str, Any] | None:
-    """Return the section table from the first file that defines it."""
-    _, found = first_section_with_path(files, section)
-    return found

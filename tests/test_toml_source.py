@@ -10,7 +10,7 @@ from confargs.exceptions import ConfigDiscoveryError
 from confargs.toml_source import (
     find_project_config_files,
     find_user_config_files,
-    first_section,
+    first_section_with_path,
     get_section,
     load_toml,
     user_config_dir,
@@ -100,12 +100,12 @@ def test_discovery_ignore_git_keeps_walking(tmp_path: Path) -> None:
 def test_first_section_skips_files_without_section(tmp_path: Path) -> None:
     a = write(tmp_path / "a.toml", "[tool.other]\nx = 1\n")
     b = write(tmp_path / "b.toml", "[tool.x]\nlog = 'hit'\n")
-    assert first_section([a, b], ("tool", "x")) == {"log": "hit"}
+    assert first_section_with_path([a, b], ("tool", "x")) == (b, {"log": "hit"})
 
 
 def test_first_section_none_when_absent(tmp_path: Path) -> None:
     a = write(tmp_path / "a.toml", "[tool.other]\nx = 1\n")
-    assert first_section([a], ("tool", "x")) is None
+    assert first_section_with_path([a], ("tool", "x")) == (None, None)
 
 
 def test_user_config_dir_windows(monkeypatch: pytest.MonkeyPatch) -> None:
