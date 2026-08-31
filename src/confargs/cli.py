@@ -68,7 +68,12 @@ def _negated_flag_attr(name: str, table: NameTable, flags: set[str]) -> str | No
     if table.ignore_hyphens:
         normalized = table.normalize_bare(name[2:])
         if normalized.startswith("no"):
-            attr = table.long_normalized_to_attr.get(normalized[2:])
+            base = normalized[2:]
+            attr = table.long_normalized_to_attr.get(base)
+            if attr is None and table.allow_abbrev:
+                candidates = table._abbrev_attrs(base)
+                if len(candidates) == 1:
+                    attr = next(iter(candidates))
             if attr is not None and attr in flags:
                 return attr
     return None

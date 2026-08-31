@@ -60,6 +60,21 @@ def test_prefix_flag_and_negation() -> None:
     assert run_cli(Tool, ["--no-dry"]).values == {"dryrun": False}
 
 
+def test_joined_negation_abbreviates_with_ignore_hyphens() -> None:
+    class Runner(ArgConfig):
+        cli_allow_abbrev = True
+        cli_case_insensitive = True
+        cli_ignore_hyphens = True
+        statusrc: bool = option(name="statusrc", default=True)
+
+    # ``--nostatusrc`` is the joined negation; abbreviated + case-insensitive
+    # forms must reach the same flag (RF uses ``--NoStatus`` / ``--NoStatusRC``).
+    assert run_cli(Runner, ["--nostatusrc"]).values == {"statusrc": False}
+    assert run_cli(Runner, ["--nostatus"]).values == {"statusrc": False}
+    assert run_cli(Runner, ["--NoStatus"]).values == {"statusrc": False}
+    assert run_cli(Runner, ["--no-status"]).values == {"statusrc": False}
+
+
 def test_ambiguous_prefix_raises() -> None:
     # ``--re`` is a prefix of both ``--removekeywords`` and ``--reportbackground``.
     with pytest.raises(CliUsageError) as exc:
