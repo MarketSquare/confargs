@@ -34,6 +34,14 @@ class ArgConfig:
         strict_config: When true (the default), unknown keys or options declared
             with ``config=False`` found in a TOML config section raise an error
             instead of being ignored.
+        cli_case_insensitive: When true, long options are matched
+            case-insensitively on the command line (``--VariableFile`` resolves
+            to ``--variablefile``). Disabled by default. Config-file keys are
+            always matched exactly, regardless of this setting.
+        cli_ignore_hyphens: When true, hyphens in long option names are ignored
+            on the command line (``--variable-file`` resolves to
+            ``--variablefile``, and ``--nostatusrc`` negates ``--statusrc``).
+            Disabled by default. Config-file keys are always matched exactly.
     """
 
     tool_name: str | None = None
@@ -42,6 +50,8 @@ class ArgConfig:
     env_var_template: str = "{name}_{option}"
     options_env_var: str | None = None
     strict_config: bool = True
+    cli_case_insensitive: bool = False
+    cli_ignore_hyphens: bool = False
 
     @option(name="help", short="h", config=False)
     def help(self, value: bool = False) -> bool:
