@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > stabilising. Minor (`0.X.0`) releases may include breaking changes; patch
 > (`0.x.Y`) releases are reserved for backwards-compatible fixes.
 
+## [0.6.0](https://github.com/MarketSquare/confargs/compare/v0.5.0...v0.6.0) (2026-08-31)
+
+
+### Features
+
+* add opt-in case- and hyphen-insensitive CLI option matching ([#36](https://github.com/MarketSquare/confargs/issues/36)) ([8b318ec](https://github.com/MarketSquare/confargs/commit/8b318ecfe08859bf1a8604bc466bd9032c4effa0))
+
 ## [0.5.0](https://github.com/MarketSquare/confargs/compare/v0.4.0...v0.5.0) (2026-08-31)
 
 

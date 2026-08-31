@@ -24,7 +24,7 @@ from confargs.options import Option, collect_options, option, resolve_names
 from confargs.processor import ConfigurationProcessor
 from confargs.profiles import build_profile_overlay, select_profiles
 
-__version__ = "0.5.0"  # x-release-please-version
+__version__ = "0.6.0"  # x-release-please-version
 
 __all__ = [
     "MISSING",
