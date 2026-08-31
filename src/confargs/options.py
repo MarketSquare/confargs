@@ -307,6 +307,7 @@ class NameTable:
     long_normalized_to_attr: dict[str, str] = field(default_factory=dict)
     case_insensitive: bool = False
     ignore_hyphens: bool = False
+    allow_abbrev: bool = False
 
     @property
     def lenient(self) -> bool:
@@ -331,14 +332,55 @@ class NameTable:
 
         Tries an exact match first, then — when lenient matching is enabled —
         the normalised fallback map, so ``--variable-file``, ``--variablefile``
-        and ``--VariableFile`` can all resolve to the same option.
+        and ``--VariableFile`` can all resolve to the same option. Finally, when
+        ``allow_abbrev`` is enabled, an unambiguous prefix of a long name
+        resolves too (``--rem`` → ``--removekeywords``). An exact/normalised
+        match always wins over a prefix, and an ambiguous prefix resolves to
+        ``None`` here (the parser reports it via :meth:`abbrev_matches`).
         """
         attr = self.long_to_attr.get(token)
         if attr is not None:
             return attr
-        if not self.lenient or not token.startswith("--"):
+        if not token.startswith("--"):
             return None
-        return self.long_normalized_to_attr.get(self.normalize_bare(token[2:]))
+        bare = token[2:]
+        if self.lenient:
+            attr = self.long_normalized_to_attr.get(self.normalize_bare(bare))
+            if attr is not None:
+                return attr
+        if self.allow_abbrev:
+            matches = self._abbrev_attrs(bare)
+            if len(matches) == 1:
+                return next(iter(matches))
+        return None
+
+    def _abbrev_attrs(self, bare: str) -> set[str]:
+        """Return the distinct attrs whose normalised long name starts with ``bare``."""
+        norm = self.normalize_bare(bare)
+        if not norm:
+            return set()
+        return {attr for full, attr in self.long_normalized_to_attr.items() if full.startswith(norm)}
+
+    def abbrev_matches(self, token: str) -> list[str]:
+        """Return display long names an abbreviation could match, for error reporting.
+
+        Returns the full ``--long`` spellings (one per distinct option, in
+        declaration order) whose normalised form starts with ``token``'s
+        normalised bare name. Empty unless ``allow_abbrev`` is on and the token
+        is a ``--long`` prefix of at least one option.
+        """
+        if not self.allow_abbrev or not token.startswith("--"):
+            return []
+        norm = self.normalize_bare(token[2:])
+        if not norm:
+            return []
+        matches: list[str] = []
+        seen: set[str] = set()
+        for long, attr in self.long_to_attr.items():
+            if attr not in seen and self.normalize_bare(long[2:]).startswith(norm):
+                seen.add(attr)
+                matches.append(long)
+        return matches
 
     def attr_for(self, token: str) -> str | None:
         if token.startswith("--"):
@@ -353,6 +395,7 @@ def resolve_names(
     *,
     case_insensitive: bool = False,
     ignore_hyphens: bool = False,
+    allow_abbrev: bool = False,
 ) -> NameTable:
     """Assign final CLI names to options, resolving short-name collisions.
 
@@ -365,9 +408,14 @@ def resolve_names(
     is built so long options can also be matched with the corresponding
     leniency on the command line (config-file keys stay exact). Long names that
     would collide once normalised are dropped from the fallback map — they still
-    work through their exact spelling.
+    work through their exact spelling. When ``allow_abbrev`` is set the same
+    normalised map backs unambiguous prefix matching of long options.
     """
-    table = NameTable(case_insensitive=case_insensitive, ignore_hyphens=ignore_hyphens)
+    table = NameTable(
+        case_insensitive=case_insensitive,
+        ignore_hyphens=ignore_hyphens,
+        allow_abbrev=allow_abbrev,
+    )
 
     # Pass 1: long names and explicit short names (must be unique).
     for attr, opt in options.items():
@@ -399,8 +447,10 @@ def resolve_names(
                 table.attr_to_names[attr].append(candidate)
                 break
 
-    # Pass 3: normalised fallback map for lenient long matching.
-    if table.lenient:
+    # Pass 3: normalised fallback map for lenient long matching and/or
+    # abbreviation. It also backs unambiguous prefix matching when
+    # ``allow_abbrev`` is on (with abbreviation-only, normalisation is identity).
+    if table.lenient or table.allow_abbrev:
         ambiguous: set[str] = set()
         for long, attr in table.long_to_attr.items():
             key = table.normalize_bare(long[2:])

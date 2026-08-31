@@ -90,6 +90,7 @@ class ConfigurationProcessor:
             self.options,
             case_insensitive=self.instance.cli_case_insensitive,
             ignore_hyphens=self.instance.cli_ignore_hyphens,
+            allow_abbrev=self.instance.cli_allow_abbrev,
         )
         self.value_types = {attr: resolve_value_type(opt) for attr, opt in self.options.items()}
         self.arg_value_types = {attr: self._argument_value_type(arg) for attr, arg in self.arguments.items()}
