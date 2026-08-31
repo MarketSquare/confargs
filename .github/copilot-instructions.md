@@ -52,13 +52,15 @@ releases.
 
 | Module | Responsibility |
 |--------|----------------|
-| `base.py` | `ArgConfig` base class + builtin options (`help`, `config`, `no-config`, `ignore-git`). Class attrs: `name`, `config_names`, `default_config_section`, `env_var_template`, `strict_config`. |
+| `base.py` | `ArgConfig` base class + builtin options (`help`, `config`, `no-config`, `ignore-git`, `profile`). Class attrs: `tool_name`, `config_names`, `default_config_section`, `env_var_template`, `options_env_var`, `strict_config`. |
 | `options.py` | `Option` descriptor, the `option()` factory, name/short derivation, `resolve_names`, `collect_options`. |
-| `coercion.py` | `resolve_value_type` + `coerce_value` — the only place that converts raw values into declared types. |
+| `arguments.py` | `Argument` descriptor + `argument()` factory for positionals (`nargs` 1/`?`/`*`/`+`), `collect_arguments` (variadic must be last). |
+| `coercion.py` | `resolve_value_type` (building a `ValueType`) + `coerce_value` + `parse_bool` — the only place that converts raw values into declared types (incl. `Literal[...]` choices). |
 | `processor.py` | `ConfigurationProcessor` — orchestrates discovery, eager expansion, merge by precedence, calls user methods. |
 | `cli.py` | argv tokenising, flag negation (`--no-*`), short/long parsing. |
-| `env_source.py` | Opt-in env var reading (`option(env=...)`), name templating. |
-| `toml_source.py` | TOML discovery (cwd upward, stop at `.git`), section lookup, key mapping. |
+| `env_source.py` | Opt-in env var reading (`option(env=...)`), name templating, `options_env_var` splitting. |
+| `toml_source.py` | TOML discovery (cwd upward, stop at `.git`), section lookup, key mapping, `extends` resolution. |
+| `profiles.py` | Named config overlays (`<section>.profiles.<name>`): selection/globbing, `inherits`, `precedence`, `enabled`. |
 | `argfile.py` | `read_argument_file` / `split_argument_file` for eager `--argumentfile`. |
 | `namespace.py` | Immutable `Namespace` result object. |
 | `exceptions.py` | Error hierarchy + `MISSING` sentinel + `Exit`. |
