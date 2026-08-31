@@ -9,6 +9,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > stabilising. Minor (`0.X.0`) releases may include breaking changes; patch
 > (`0.x.Y`) releases are reserved for backwards-compatible fixes.
 
+## [0.5.0](https://github.com/MarketSquare/confargs/compare/v0.4.0...v0.5.0) (2026-08-31)
+
+
+### Features
+
+* support extends to inherit other config files ([#30](https://github.com/MarketSquare/confargs/issues/30)) ([168c339](https://github.com/MarketSquare/confargs/commit/168c339f5017bbacf796be4510cb775efbfceccb)), closes [#5](https://github.com/MarketSquare/confargs/issues/5)
+
+
+### Bug Fixes
+
+* infer factory default value type from the produced value ([#32](https://github.com/MarketSquare/confargs/issues/32)) ([4071a0e](https://github.com/MarketSquare/confargs/commit/4071a0e716549ebdd2f1b9821b9c8606cc279420))
+
+
+### Documentation
+
+* note dash-value workaround and refresh architecture map ([#35](https://github.com/MarketSquare/confargs/issues/35)) ([0810872](https://github.com/MarketSquare/confargs/commit/08108720a046a45e6bb6332705cfd8479b02f276))
+
+
+### Refactoring
+
+* drop unused first_section helper ([#33](https://github.com/MarketSquare/confargs/issues/33)) ([0fb6618](https://github.com/MarketSquare/confargs/commit/0fb66185def6ca5ef568c1aac933a1ad51afcc29))
+
 ## [Unreleased]
 
 ### Bug Fixes
