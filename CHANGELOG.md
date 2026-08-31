@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > stabilising. Minor (`0.X.0`) releases may include breaking changes; patch
 > (`0.x.Y`) releases are reserved for backwards-compatible fixes.
 
+## [0.7.0](https://github.com/MarketSquare/confargs/compare/v0.6.0...v0.7.0) (2026-08-31)
+
+
+### Features
+
+* add opt-in unambiguous-prefix abbreviation for long CLI options ([#38](https://github.com/MarketSquare/confargs/issues/38)) ([fc8c282](https://github.com/MarketSquare/confargs/commit/fc8c282703e0db5988d7247394aa1f1563d2f592))
+
 ## [0.6.0](https://github.com/MarketSquare/confargs/compare/v0.5.0...v0.6.0) (2026-08-31)
 
 
