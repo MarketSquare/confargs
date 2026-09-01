@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > stabilising. Minor (`0.X.0`) releases may include breaking changes; patch
 > (`0.x.Y`) releases are reserved for backwards-compatible fixes.
 
+## [0.9.0](https://github.com/MarketSquare/confargs/compare/v0.8.0...v0.9.0) (2026-09-01)
+
+
+### Features
+
+* add case-insensitive choice matching ([#44](https://github.com/MarketSquare/confargs/issues/44)) ([76c22d1](https://github.com/MarketSquare/confargs/commit/76c22d1ca6508615cbf1b2886946a83238a357ef))
+* add shell completion support ([#42](https://github.com/MarketSquare/confargs/issues/42)) ([9a90ce8](https://github.com/MarketSquare/confargs/commit/9a90ce8f1a5aad5edc1c7f72ecd676eb044deb7f))
+
 ## [Unreleased]
 
 ### Features
