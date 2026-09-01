@@ -14,6 +14,7 @@ Run it directly from a checkout, no install required::
     GREETER_WHO=Ada uv run python examples/demo.py      # environment variable
     uv run python examples/demo.py -A examples/example.args   # argument file
     uv run python examples/demo.py --help
+    uv run python examples/demo.py --show-completion bash      # shell completion
 
 Values are merged from, highest priority first: command line, then
 ``GREETER_*`` environment variables, then a ``[tool.greeter]`` table in a

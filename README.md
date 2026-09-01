@@ -427,6 +427,37 @@ processor, for example in `pyproject.toml`:
 mytool = "mytool.cli:main"
 ```
 
+## Shell completion
+
+Every tool built with confargs gets tab-completion for **bash**, **zsh**,
+**fish** and **PowerShell** for free — no extra dependency, no per-tool setup.
+Two builtin options drive it (both take the target shell as their value):
+
+```bash
+# Print the completion script (inspect it, or source it directly):
+mytool --show-completion bash
+eval "$(mytool --show-completion bash)"
+
+# Or install it into the shell's standard location and reload your shell:
+mytool --install-completion zsh
+```
+
+The supported shell values are `bash`, `zsh`, `fish`, `powershell` and `pwsh`.
+On Windows, use `powershell` for **Windows PowerShell 5.1** (profile under
+`Documents\WindowsPowerShell`) and `pwsh` for **PowerShell 7+** (profile under
+`Documents\PowerShell`) — install into the one you actually run.
+
+Completion is dynamic: the shell re-invokes your program to ask what to suggest,
+so candidates always reflect the options you have declared. It completes long
+and short option names, `--no-` negations for boolean flags, and — where an
+option or argument restricts its value with `typing.Literal[...]` — the allowed
+[choices](#restricting-a-value-to-a-set-of-choices). Options whose value is not
+a fixed set fall back to the shell's own file/directory completion.
+
+Under the hood the shell sets a `_<PROG>_COMPLETE` environment variable when it
+wants suggestions; `ConfigurationProcessor.process()` detects it, prints the
+candidates and exits before any of your option methods run.
+
 ## Development
 
 This project uses [uv](https://docs.astral.sh/uv/).

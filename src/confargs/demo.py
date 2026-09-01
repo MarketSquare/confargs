@@ -8,6 +8,11 @@ This module doubles as the ``confargs-demo`` console script (see
     MYTOOL_CONSOLE=dotted confargs-demo
     confargs-demo --help
 
+Enable tab-completion for your shell (bash, zsh, fish or PowerShell)::
+
+    confargs-demo --install-completion bash
+    confargs-demo --show-completion zsh
+
 Or without installing::
 
     uv run confargs-demo --console quiet

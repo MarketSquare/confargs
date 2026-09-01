@@ -2,8 +2,12 @@
 
 from __future__ import annotations
 
+from typing import Literal
+
 from confargs.exceptions import Exit
 from confargs.options import option
+
+_Shell = Literal["bash", "zsh", "fish", "powershell", "pwsh"]
 
 
 class ArgConfig:
@@ -89,6 +93,27 @@ class ArgConfig:
     def profile(self, value: list[str] | None = None) -> list[str]:
         """Activate one or more configuration profiles (glob patterns allowed)."""
         return value or []
+
+    @option(name="show-completion", config=False)
+    def show_completion(self, value: _Shell | None = None) -> _Shell | None:
+        """Print the shell completion script for the given shell and exit."""
+        if value is None:
+            return value
+        from confargs.completion import prog_name, render_source
+
+        print(render_source(value, prog_name()))
+        raise Exit(0)
+
+    @option(name="install-completion", config=False)
+    def install_completion(self, value: _Shell | None = None) -> _Shell | None:
+        """Install shell completion for the given shell and exit."""
+        if value is None:
+            return value
+        from confargs.completion import install_completion as _install
+        from confargs.completion import prog_name
+
+        print(_install(value, prog_name()))
+        raise Exit(0)
 
     @property
     def config_section(self) -> tuple[str, ...]:
