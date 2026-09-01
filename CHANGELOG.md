@@ -9,6 +9,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > stabilising. Minor (`0.X.0`) releases may include breaking changes; patch
 > (`0.x.Y`) releases are reserved for backwards-compatible fixes.
 
+## [Unreleased]
+
+### Features
+
+* add shell completion for bash, zsh, fish and PowerShell. Every tool gains two
+  builtin options, `--show-completion <shell>` and `--install-completion
+  <shell>`, and answers dynamic completion requests from the shell (option
+  names, `--no-` flag negations and `Literal[...]` value choices). Implemented
+  with confargs' own code — no Click/argparse or third-party completer
+  dependency.
+
+### Bug Fixes
+
+* `Exit` is no longer a subclass of `ArgConfigError`. It is a clean-exit
+  control-flow signal (raised for `--help`, `--show-completion`,
+  `--install-completion`), so a host application's broad `except ArgConfigError`
+  no longer accidentally swallows it and reports a spurious error.
+
+  **Migration (pre-1.0):** if your entry point relied on `except
+  ArgConfigError` to also stop on `--help`, catch `confargs.Exit` explicitly
+  (before `ArgConfigError`) and return `exit_signal.code`, as shown in
+  `examples/demo.py`.
+
 ## [0.8.0](https://github.com/MarketSquare/confargs/compare/v0.7.0...v0.8.0) (2026-08-31)
 
 

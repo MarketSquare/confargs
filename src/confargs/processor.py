@@ -12,7 +12,14 @@ from confargs.base import ArgConfig
 from confargs.cli import parse_cli
 from confargs.coercion import ValueType, coerce_value, resolve_value_type
 from confargs.env_source import collect_env_values, split_env_args
-from confargs.exceptions import MISSING, CliUsageError, ConfigDiscoveryError, OptionDefinitionError, OptionValueError
+from confargs.exceptions import (
+    MISSING,
+    CliUsageError,
+    ConfigDiscoveryError,
+    Exit,
+    OptionDefinitionError,
+    OptionValueError,
+)
 from confargs.namespace import Namespace
 from confargs.options import collect_options, resolve_names
 from confargs.profiles import build_profile_overlay
@@ -116,6 +123,7 @@ class ConfigurationProcessor:
 
     def process(self) -> Namespace:
         """Parse every source, merge them and return resolved values."""
+        self._maybe_handle_completion()
         argv = self._expand_eager(self.argv)
         cli_result = parse_cli(argv, self.table, self.flags, self.lists)
         arg_cli_values = self._assign_positionals(cli_result.positionals)
@@ -139,6 +147,30 @@ class ConfigurationProcessor:
             raw = self._pick(attr, arg_sources)
             resolved[attr] = self._resolve_argument(arg, attr, raw)
         return Namespace(resolved)
+
+    def _maybe_handle_completion(self) -> None:
+        """Answer a shell completion request and exit, if one is pending.
+
+        When the shell re-invokes the program to request completions it sets the
+        ``_<PROG>_COMPLETE`` environment variable. This is checked before any
+        other processing so completion never triggers option side effects.
+        """
+        from confargs import completion
+
+        program = completion.prog_name()
+        instruction = self.environ.get(completion.complete_var(program))
+        if not instruction:
+            return
+        output = completion.handle_request(
+            instruction,
+            table=self.table,
+            options=self.options,
+            value_types=self.value_types,
+            flags=self.flags,
+            environ=self.environ,
+        )
+        sys.stdout.write(output + "\n")
+        raise Exit(0)
 
     def _assign_positionals(self, positionals: Sequence[str]) -> dict[str, Any]:
         """Assign leftover positional tokens to declared arguments by order.

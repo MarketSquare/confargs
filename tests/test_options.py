@@ -206,6 +206,17 @@ def test_help_option_raises_exit_when_true() -> None:
     assert exc.value.code == 0
 
 
+def test_exit_is_not_an_argconfigerror() -> None:
+    # Exit is a clean-exit control-flow signal, so a broad ``except
+    # ArgConfigError`` in a host app must not swallow it.
+    assert not issubclass(confargs.Exit, confargs.ArgConfigError)
+    with pytest.raises(confargs.Exit):
+        try:
+            raise confargs.Exit(0)
+        except confargs.ArgConfigError:  # pragma: no cover - must NOT catch
+            pytest.fail("Exit was caught by except ArgConfigError")
+
+
 class Declared(ArgConfig):
     """A tool using declarative (method-less) options."""
 

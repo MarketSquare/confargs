@@ -54,8 +54,23 @@ class CliUsageError(ArgConfigError):
     """Raised for malformed command-line input (unknown or incomplete options)."""
 
 
-class Exit(ArgConfigError):
-    """Raised to stop processing and exit (e.g. after printing ``--help``)."""
+class Exit(Exception):
+    """Raised to stop processing and exit cleanly (e.g. after printing ``--help``).
+
+    This is intentionally **not** a subclass of :class:`ArgConfigError`. It
+    signals a *successful* early exit (``--help``, ``--show-completion``,
+    ``--install-completion`` ...), not a failure, so a host application's broad
+    ``except ArgConfigError`` cannot accidentally swallow it and report it as an
+    error. Catch it explicitly and use its :attr:`code`::
+
+        try:
+            config = ConfigurationProcessor(MyArgs, argv=argv).process()
+        except Exit as exit_signal:
+            return exit_signal.code
+        except ArgConfigError as error:
+            print(f"error: {error}")
+            return 2
+    """
 
     def __init__(self, code: int = 0) -> None:
         super().__init__(f"exit with code {code}")
