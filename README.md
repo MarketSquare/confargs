@@ -324,6 +324,19 @@ The Literal may be optional (`Literal["a", "b"] | None`), wrapped in `list[...]`
 for repeatable options, or supplied on a method's `value` parameter. Non-string
 members (e.g. `Literal[1, 2, 3]`) are coerced before the membership check.
 
+By default the match is case-sensitive. Pass `ignore_case=True` to accept any
+casing and normalise the result to the spelling declared in the `Literal` — handy
+when a canonical form differs from what users type:
+
+```python
+class Args(ArgConfig):
+    # ``--colors on`` / ``--colors On`` / ``--colors ON`` all yield "ON".
+    colors: Literal["AUTO", "ON", "OFF", "ANSI"] = option(name="colors", default="AUTO", ignore_case=True)
+```
+
+An unknown value is still rejected, and a case-insensitive match is only honoured
+when it is unambiguous.
+
 ### Eager options and argument files
 
 Mark an option `is_eager=True` to resolve it *before* every other source,

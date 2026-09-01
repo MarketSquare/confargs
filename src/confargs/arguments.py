@@ -47,6 +47,7 @@ class Argument:
         nargs: int | str = 1,
         config: bool = True,
         metavar: str | None = None,
+        ignore_case: bool = False,
     ) -> None:
         if nargs not in _VALID_NARGS:
             raise OptionDefinitionError(f"invalid nargs {nargs!r}; expected one of {_VALID_NARGS}")
@@ -58,6 +59,7 @@ class Argument:
         self.nargs = nargs
         self.config = config
         self.explicit_metavar = metavar
+        self.ignore_case = ignore_case
         self.attr_name: str = func.__name__ if func is not None else (name or "")
         self.owner: type | None = None
 
@@ -194,6 +196,7 @@ def argument(
     nargs: int | str = 1,
     config: bool = True,
     metavar: str | None = None,
+    ignore_case: bool = False,
 ) -> Argument:
     """Declare a positional argument.
 
@@ -222,6 +225,9 @@ def argument(
         config: When false, the argument is never loaded from TOML config.
         metavar: Override the ``--help`` metavar (defaults to the upper-cased
             name).
+        ignore_case: When true and the value is constrained by ``Literal[...]``
+            choices, match case-insensitively and return the choice's declared
+            spelling. Has no effect on arguments without choices.
     """
     return Argument(
         func,
@@ -232,6 +238,7 @@ def argument(
         nargs=nargs,
         config=config,
         metavar=metavar,
+        ignore_case=ignore_case,
     )
 
 

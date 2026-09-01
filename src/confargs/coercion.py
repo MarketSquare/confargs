@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import types
 import typing
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any, Literal, Union, get_args, get_origin
 
 from confargs.exceptions import MISSING, OptionValueError
@@ -40,6 +40,7 @@ class ValueType:
     is_list: bool = False
     allows_none: bool = False
     choices: tuple[Any, ...] | None = None
+    ignore_case: bool = False
 
     @property
     def is_flag(self) -> bool:
@@ -49,6 +50,14 @@ class ValueType:
 
 def resolve_value_type(option: Option | Argument) -> ValueType:
     """Inspect an option (or argument) and describe the type its value expects."""
+    value_type = _resolve_declared_type(option)
+    if getattr(option, "ignore_case", False) and not value_type.ignore_case:
+        value_type = replace(value_type, ignore_case=True)
+    return value_type
+
+
+def _resolve_declared_type(option: Option | Argument) -> ValueType:
+    """Describe the value type declared by an option/argument (before flags)."""
     if option.func is None:
         return _resolve_declarative(option)
 
@@ -161,10 +170,21 @@ def _as_list(raw: Any) -> list[Any]:
     return [raw]
 
 
-def _check_choice(value: Any, choices: tuple[Any, ...]) -> Any:
-    """Return ``value`` if it is one of ``choices``, else raise."""
+def _check_choice(value: Any, choices: tuple[Any, ...], *, ignore_case: bool = False) -> Any:
+    """Return ``value`` if it matches one of ``choices``, else raise.
+
+    With ``ignore_case`` a string value matches a choice regardless of case, and
+    the *canonical* choice (as declared in the ``Literal[...]``) is returned so
+    downstream code always sees the declared spelling. A case-insensitive match
+    is only honoured when it is unambiguous.
+    """
     if value in choices:
         return value
+    if ignore_case and isinstance(value, str):
+        folded = value.casefold()
+        matches = [choice for choice in choices if isinstance(choice, str) and choice.casefold() == folded]
+        if len(matches) == 1:
+            return matches[0]
     allowed = ", ".join(repr(choice) for choice in choices)
     raise OptionValueError(f"invalid value {value!r}; choose from {allowed}")
 
@@ -185,10 +205,10 @@ def coerce_value(raw: Any, value_type: ValueType) -> Any:
     if value_type.is_list:
         items = [_coerce_scalar(item, value_type.base) for item in _as_list(raw)]
         if value_type.choices is not None:
-            items = [_check_choice(item, value_type.choices) for item in items]
+            items = [_check_choice(item, value_type.choices, ignore_case=value_type.ignore_case) for item in items]
         return items
 
     value = _coerce_scalar(raw, value_type.base)
     if value_type.choices is not None:
-        return _check_choice(value, value_type.choices)
+        return _check_choice(value, value_type.choices, ignore_case=value_type.ignore_case)
     return value
