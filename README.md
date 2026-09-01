@@ -442,6 +442,11 @@ eval "$(mytool --show-completion bash)"
 mytool --install-completion zsh
 ```
 
+The supported shell values are `bash`, `zsh`, `fish`, `powershell` and `pwsh`.
+On Windows, use `powershell` for **Windows PowerShell 5.1** (profile under
+`Documents\WindowsPowerShell`) and `pwsh` for **PowerShell 7+** (profile under
+`Documents\PowerShell`) — install into the one you actually run.
+
 Completion is dynamic: the shell re-invokes your program to ask what to suggest,
 so candidates always reflect the options you have declared. It completes long
 and short option names, `--no-` negations for boolean flags, and — where an

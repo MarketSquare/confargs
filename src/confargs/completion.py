@@ -39,8 +39,13 @@ if TYPE_CHECKING:
     from confargs.coercion import ValueType
     from confargs.options import NameTable, Option
 
-SUPPORTED_SHELLS: tuple[str, ...] = ("bash", "zsh", "fish", "powershell")
-"""Shells confargs can generate completion scripts for."""
+SUPPORTED_SHELLS: tuple[str, ...] = ("bash", "zsh", "fish", "powershell", "pwsh")
+"""Shells confargs can generate completion scripts for.
+
+``powershell`` targets Windows PowerShell 5.1 (``Documents\\WindowsPowerShell``)
+and ``pwsh`` targets PowerShell 7+ (``Documents\\PowerShell``). The generated
+script is identical; only the install location (startup profile) differs.
+"""
 
 
 @dataclass(frozen=True)
@@ -177,7 +182,7 @@ _POWERSHELL_TEMPLATE = """\
 Register-ArgumentCompleter -Native -CommandName @@PROG@@ -ScriptBlock {
     param($wordToComplete, $commandAst, $cursorPosition)
 
-    $env:@@VAR@@ = 'powershell_complete'
+    $env:@@VAR@@ = '@@COMPLETE@@'
     $env:COMP_WORDS = $commandAst.ToString()
     if ($wordToComplete) {
         $env:COMP_CWORD = $commandAst.CommandElements.Count - 1
@@ -227,6 +232,7 @@ _TEMPLATES: dict[str, str] = {
     "zsh": _ZSH_TEMPLATE,
     "fish": _FISH_TEMPLATE,
     "powershell": _POWERSHELL_TEMPLATE,
+    "pwsh": _POWERSHELL_TEMPLATE,
 }
 
 
@@ -244,6 +250,7 @@ def render_source(shell: str, program: str | None = None) -> str:
     return (
         template.replace("@@FUNC@@", _func_name(program))
         .replace("@@VAR@@", complete_var(program))
+        .replace("@@COMPLETE@@", f"{shell}_complete")
         .replace("@@PROG@@", program)
     )
 
@@ -284,8 +291,14 @@ def install_completion(shell: str, program: str | None = None) -> str:
         _write_script(path, script)
         return f"fish completion installed to {path} (restart your shell to activate)"
 
-    # powershell
-    profile = _powershell_profile()
+    if shell == "pwsh":
+        # PowerShell 7+ (cross-platform), profile under ``Documents/PowerShell``.
+        profile = _powershell_profile("pwsh", "PowerShell")
+        _append_block(profile, script)
+        return f"pwsh completion appended to {profile} (restart your shell to activate)"
+
+    # Windows PowerShell 5.1, profile under ``Documents/WindowsPowerShell``.
+    profile = _powershell_profile("powershell", "WindowsPowerShell")
     _append_block(profile, script)
     return f"powershell completion appended to {profile} (restart your shell to activate)"
 
@@ -315,25 +328,31 @@ def _append_block(path: Path, block: str) -> None:
     path.write_text(f"{existing}{prefix}{block}\n", encoding="utf-8")
 
 
-def _powershell_profile() -> Path:
-    """Locate the PowerShell profile path, best-effort."""
-    for exe in ("pwsh", "powershell"):
-        try:
-            import subprocess
+def _powershell_profile(exe: str, fallback_subdir: str) -> Path:
+    """Locate the startup-profile path for a PowerShell ``exe``, best-effort.
 
-            result = subprocess.run(
-                [exe, "-NoProfile", "-Command", "$PROFILE"],
-                capture_output=True,
-                text=True,
-                timeout=15,
-            )
-        except (OSError, subprocess.SubprocessError):
-            continue
+    Args:
+        exe: The executable to query (``"pwsh"`` or ``"powershell"``).
+        fallback_subdir: ``Documents`` subdirectory to use if the executable
+            cannot be queried (``"PowerShell"`` for pwsh 7+, ``"WindowsPowerShell"``
+            for Windows PowerShell 5.1).
+    """
+    try:
+        import subprocess
+
+        result = subprocess.run(
+            [exe, "-NoProfile", "-Command", "$PROFILE"],
+            capture_output=True,
+            text=True,
+            timeout=15,
+        )
         candidate = result.stdout.strip()
         if candidate:
             return Path(candidate)
-    # Fallback to the conventional pwsh profile location.
-    return Path.home() / "Documents" / "PowerShell" / "Microsoft.PowerShell_profile.ps1"
+    except (OSError, subprocess.SubprocessError):
+        pass
+    # Fallback to the conventional profile location.
+    return Path.home() / "Documents" / fallback_subdir / "Microsoft.PowerShell_profile.ps1"
 
 
 # --------------------------------------------------------------------------- #
@@ -482,7 +501,7 @@ def compute_completions(
 
 def format_completion(shell: str, item: Completion) -> str:
     """Format one candidate into the record format the source script expects."""
-    if shell in ("zsh", "powershell"):
+    if shell in ("zsh", "powershell", "pwsh"):
         help_ = item.help or "_"
         value = item.value.replace(":", r"\:") if shell == "zsh" and item.help else item.value
         return f"{item.type}\n{value}\n{help_}"

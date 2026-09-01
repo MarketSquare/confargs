@@ -184,6 +184,21 @@ def test_format_fish_with_help_uses_tab() -> None:
     assert format_completion("fish", Completion("--x", help="h")) == "plain,--x\th"
 
 
+def test_format_pwsh_matches_powershell_triple() -> None:
+    item = Completion("verbose", help="mode")
+    assert format_completion("pwsh", item) == format_completion("powershell", item)
+    assert format_completion("pwsh", item) == "plain\nverbose\nmode"
+
+
+def test_render_pwsh_advertises_pwsh_instruction() -> None:
+    ps = render_source("powershell", "mytool")
+    pwsh = render_source("pwsh", "mytool")
+    assert "pwsh_complete" in pwsh
+    assert "powershell_complete" not in pwsh
+    # The only difference between the two scripts is the advertised instruction.
+    assert pwsh.replace("pwsh_complete", "powershell_complete") == ps
+
+
 # --------------------------------------------------------------------------- #
 # End-to-end request handling through the processor
 # --------------------------------------------------------------------------- #
@@ -241,3 +256,23 @@ def test_install_is_idempotent(tmp_path, monkeypatch: pytest.MonkeyPatch) -> Non
 def test_install_rejects_unknown_shell() -> None:
     with pytest.raises(CliUsageError):
         install_completion("tcsh", "mytool")
+
+
+def test_install_pwsh_and_powershell_use_distinct_profiles(tmp_path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("pathlib.Path.home", lambda: tmp_path)
+    # Force the conventional-location fallback (don't query a real interpreter).
+    import subprocess
+
+    def _boom(*args: object, **kwargs: object) -> None:
+        raise OSError("no shell")
+
+    monkeypatch.setattr(subprocess, "run", _boom)
+
+    install_completion("pwsh", "mytool")
+    install_completion("powershell", "mytool")
+
+    pwsh_profile = tmp_path / "Documents" / "PowerShell" / "Microsoft.PowerShell_profile.ps1"
+    ps_profile = tmp_path / "Documents" / "WindowsPowerShell" / "Microsoft.PowerShell_profile.ps1"
+    assert "pwsh_complete" in pwsh_profile.read_text()
+    assert "powershell_complete" in ps_profile.read_text()
+    assert "pwsh_complete" not in ps_profile.read_text()

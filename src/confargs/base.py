@@ -7,7 +7,7 @@ from typing import Literal
 from confargs.exceptions import Exit
 from confargs.options import option
 
-_Shell = Literal["bash", "zsh", "fish", "powershell"]
+_Shell = Literal["bash", "zsh", "fish", "powershell", "pwsh"]
 
 
 class ArgConfig:

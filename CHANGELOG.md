@@ -18,7 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   <shell>`, and answers dynamic completion requests from the shell (option
   names, `--no-` flag negations and `Literal[...]` value choices). Implemented
   with confargs' own code — no Click/argparse or third-party completer
-  dependency.
+  dependency. On Windows, `powershell` targets Windows PowerShell 5.1 and `pwsh`
+  targets PowerShell 7+, installing into the matching startup profile.
 
 ### Bug Fixes
 
