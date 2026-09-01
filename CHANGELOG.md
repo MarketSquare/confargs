@@ -21,6 +21,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   dependency. On Windows, `powershell` targets Windows PowerShell 5.1 and `pwsh`
   targets PowerShell 7+, installing into the matching startup profile.
 
+* `option(..., ignore_case=True)` (and `argument(..., ignore_case=True)`) match
+  `Literal[...]` choices case-insensitively and normalise the result to the
+  spelling declared in the `Literal` (e.g. `--colors on` yields `"ON"` for
+  `Literal["AUTO", "ON", "OFF", "ANSI"]`). Unknown values are still rejected and
+  a case-insensitive match must be unambiguous. The default remains
+  case-sensitive.
+
 ### Bug Fixes
 
 * `Exit` is no longer a subclass of `ArgConfigError`. It is a clean-exit

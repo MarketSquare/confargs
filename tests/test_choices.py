@@ -97,3 +97,54 @@ def test_invalid_literal_from_toml_rejected(tmp_path) -> None:
     )
     with pytest.raises(OptionValueError, match="invalid value 'bogus'"):
         _run(Choices, [], cwd=tmp_path)
+
+
+class IgnoreCaseChoices(ArgConfig):
+    """A tool whose choices accept any case and normalise to the declared spelling."""
+
+    tool_name = "icc"
+
+    colors: Literal["AUTO", "ON", "OFF", "ANSI"] = option(name="colors", default="AUTO", ignore_case=True)
+    langs: list[Literal["EN", "PL"]] = option(name="langs", default=list, ignore_case=True)
+    action: Literal["Run", "List"] = argument(name="action", ignore_case=True)
+
+
+def _icc(argv: list[str], **kw: object) -> confargs.Namespace:
+    return _run(IgnoreCaseChoices, argv, **kw)
+
+
+def test_ignore_case_scalar_normalises_to_declared_spelling() -> None:
+    assert _icc(["--colors", "on", "Run"]).colors == "ON"
+    assert _icc(["--colors", "AnSi", "Run"]).colors == "ANSI"
+    # An exact match is returned unchanged.
+    assert _icc(["--colors", "OFF", "Run"]).colors == "OFF"
+
+
+def test_ignore_case_still_rejects_unknown_value() -> None:
+    with pytest.raises(OptionValueError, match="invalid value 'purple'; choose from"):
+        _icc(["--colors", "purple", "Run"])
+
+
+def test_ignore_case_applies_to_list_choices() -> None:
+    assert _icc(["--langs", "en", "--langs", "pl", "Run"]).langs == ["EN", "PL"]
+
+
+def test_ignore_case_applies_to_arguments() -> None:
+    assert _icc(["list"]).action == "List"
+    assert _icc(["RUN"]).action == "Run"
+
+
+def test_ignore_case_from_toml_config(tmp_path) -> None:
+    (tmp_path / "pyproject.toml").write_text(
+        '[tool.icc]\ncolors = "ansi"\naction = "run"\n',
+        encoding="utf-8",
+    )
+    ns = _icc([], cwd=tmp_path)
+    assert ns.colors == "ANSI"
+    assert ns.action == "Run"
+
+
+def test_case_sensitive_by_default() -> None:
+    # Without ``ignore_case`` the match remains exact.
+    with pytest.raises(OptionValueError, match="invalid value 'DOTTED'"):
+        _run(Choices, ["--console", "DOTTED"])

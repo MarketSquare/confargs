@@ -59,6 +59,7 @@ class Option:
         config: bool = True,
         env: bool | str = False,
         is_eager: bool = False,
+        ignore_case: bool = False,
     ) -> None:
         self.func = func
         self.explicit_name = name
@@ -70,6 +71,7 @@ class Option:
         self.config = config
         self.env = env
         self.is_eager = is_eager
+        self.ignore_case = ignore_case
         self.attr_name: str = func.__name__ if func is not None else (name or "")
         self.owner: type | None = None
         # Names the option *wants*; short-name collisions are resolved later.
@@ -214,6 +216,7 @@ def option(
     config: bool = ...,
     env: bool | str = ...,
     is_eager: bool = ...,
+    ignore_case: bool = ...,
 ) -> Option: ...
 
 
@@ -229,6 +232,7 @@ def option(
     config: bool = True,
     env: bool | str = False,
     is_eager: bool = False,
+    ignore_case: bool = False,
 ) -> Option:
     """Declare an confargs option.
 
@@ -278,6 +282,11 @@ def option(
             strings, or ``None``) replaces the option's own tokens in ``argv``,
             allowing it to inject further arguments — this is how an
             ``--argumentfile`` option expands a file into more options.
+        ignore_case: When true and the value is constrained by ``Literal[...]``
+            choices, match the supplied value case-insensitively and return the
+            choice using its declared spelling (e.g. ``--color on`` yields
+            ``"ON"`` for ``Literal["AUTO", "ON", "OFF"]``). Has no effect on
+            options without choices.
     """
 
     opt = Option(
@@ -291,6 +300,7 @@ def option(
         config=config,
         env=env,
         is_eager=is_eager,
+        ignore_case=ignore_case,
     )
     return opt
 
