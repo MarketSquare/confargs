@@ -183,3 +183,33 @@ def test_processor_end_to_end_lenient() -> None:
     assert data["statusrc"] is False
     assert data["name"] == "Suite"
     assert data["data"] == ["d1", "d2"]
+
+
+@pytest.mark.parametrize(
+    ("key", "suggestion"),
+    [
+        ("variablefiles", "variablefile"),
+        ("output-dirs", "outputdir"),
+        ("datas", "data"),
+        ("OutputDir", "outputdir"),
+        ("VARIABLE-FILE", "variablefile"),
+    ],
+)
+def test_unknown_config_key_suggests_closest_option(tmp_path: Path, key: str, suggestion: str) -> None:
+    cls = _config_tool(ignore_hyphens=True)
+    with pytest.raises(ArgConfigError, match=f"'{key}' \\(unknown option; did you mean '{suggestion}'\\?\\)"):
+        _config(cls, tmp_path, f'[tool.mytool]\n{key} = ["x"]\n')
+
+
+def test_unknown_config_key_without_close_match_has_no_hint(tmp_path: Path) -> None:
+    cls = _config_tool()
+    with pytest.raises(ArgConfigError, match=r"'wrapper' \(unknown option\)$"):
+        _config(cls, tmp_path, '[tool.mytool]\nwrapper = ["x"]\n')
+
+
+def test_suggestions_skip_non_configurable_options(tmp_path: Path) -> None:
+    cls = _config_tool()
+    with pytest.raises(ArgConfigError, match=r"'profiles-x' \(unknown option\)"):
+        _config(cls, tmp_path, "[tool.mytool]\nprofiles-x = 1\n")
+    with pytest.raises(ArgConfigError, match=r"'confi' \(unknown option\)"):
+        _config(cls, tmp_path, '[tool.mytool]\nconfi = "x"\n')
