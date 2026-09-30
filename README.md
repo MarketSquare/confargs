@@ -98,6 +98,34 @@ CLI-only options:
 - `--no-config` — ignore config files entirely.
 - `--ignore-git` — keep searching above the `.git` project root.
 
+Among project files, the first discovered file that defines the section wins;
+they are never merged (use `extends` for that).
+
+**Dedicated config files** can skip the `[tool.<name>]` table. List them in
+`top_level_config_names` and, when such a file has no section, its top-level
+keys are read instead (other tools' `[tool.*]` tables are ignored), the way
+`ruff.toml` works next to `pyproject.toml`:
+
+```python
+class MyArgs(ArgConfig):
+    tool_name = "mytool"
+    config_names = ["mytool.toml", "pyproject.toml"]
+    top_level_config_names = ["mytool.toml"]
+```
+
+```toml
+# mytool.toml — same as [tool.mytool] in pyproject.toml
+log = "results.html"
+
+[profiles.ci]
+log = "ci.html"
+```
+
+The section still wins when present, and a file mixing both layouts is an
+error. Files given with `--config` or through `extends` may also use the top
+level, unless their name is one of the other `config_names` (e.g.
+`pyproject.toml`).
+
 By default (`strict_config = True`) unknown keys — and any option declared with
 `config=False` — found in the config section raise an error, which catches typos
 early (an unknown key close to a real option gets a *did you mean ...?* hint).

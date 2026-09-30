@@ -53,6 +53,8 @@ class RobotArgs(ArgConfig):
 
     tool_name = "robot"
     config_names = ["pyproject.toml", "robot.toml"]  # noqa: RUF012 - per-subclass override
+    # robot.toml is dedicated to the tool, so it may skip the [tool.robot] table.
+    top_level_config_names = ["robot.toml"]  # noqa: RUF012 - per-subclass override
 
     # --- Positional arguments ----------------------------------------------
     # The data sources (suite files or directories) Robot Framework executes.
