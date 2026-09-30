@@ -235,7 +235,8 @@ class ConfigurationProcessor:
                 )
             attr, raw, start, end = occurrence
             value_type = self.value_types[attr]
-            value = True if value_type.is_flag else coerce_value(raw, value_type)
+            display = self.table.attr_to_names.get(attr, [attr])[0]
+            value = True if value_type.is_flag else coerce_value(raw, value_type, context=f"option '{display}'")
             method = getattr(self.instance, attr)
             result = method(value)
             if isinstance(result, str):
@@ -307,7 +308,8 @@ class ConfigurationProcessor:
                 display = self.table.attr_to_names.get(attr, [attr])[0]
                 raise OptionValueError(f"option {display} is required")
             return method(_materialize_default(default))
-        value = coerce_value(raw, self.value_types[attr])
+        display = self.table.attr_to_names.get(attr, [attr])[0]
+        value = coerce_value(raw, self.value_types[attr], context=f"option '{display}'")
         return method(value)
 
     def _resolve_argument(self, arg: Argument, attr: str, raw: Any) -> Any:
@@ -317,7 +319,7 @@ class ConfigurationProcessor:
             if default is MISSING:
                 raise OptionValueError(f"argument {arg.metavar} is required")
             return method(_materialize_default(default))
-        value = coerce_value(raw, self.arg_value_types[attr])
+        value = coerce_value(raw, self.arg_value_types[attr], context=f"argument '{arg.metavar}'")
         return method(value)
 
     def _load_toml(self, cli_values: Mapping[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
