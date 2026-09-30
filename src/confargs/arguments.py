@@ -26,6 +26,7 @@ from types import MethodType
 from typing import Any, overload
 
 from confargs.exceptions import MISSING, OptionDefinitionError
+from confargs.paths import RelativeToConfig, check_relative_to_config
 
 ArgumentMethod = Callable[..., Any]
 
@@ -48,6 +49,7 @@ class Argument:
         config: bool = True,
         metavar: str | None = None,
         ignore_case: bool = False,
+        relative_to_config: RelativeToConfig = False,
     ) -> None:
         if nargs not in _VALID_NARGS:
             raise OptionDefinitionError(f"invalid nargs {nargs!r}; expected one of {_VALID_NARGS}")
@@ -60,6 +62,7 @@ class Argument:
         self.config = config
         self.explicit_metavar = metavar
         self.ignore_case = ignore_case
+        self.relative_to_config = check_relative_to_config(relative_to_config, "argument")
         self.attr_name: str = func.__name__ if func is not None else (name or "")
         self.owner: type | None = None
 
@@ -183,6 +186,8 @@ def argument(
     nargs: int | str = ...,
     config: bool = ...,
     metavar: str | None = ...,
+    ignore_case: bool = ...,
+    relative_to_config: RelativeToConfig = ...,
 ) -> Argument: ...
 
 
@@ -197,6 +202,7 @@ def argument(
     config: bool = True,
     metavar: str | None = None,
     ignore_case: bool = False,
+    relative_to_config: RelativeToConfig = False,
 ) -> Argument:
     """Declare a positional argument.
 
@@ -228,6 +234,14 @@ def argument(
         ignore_case: When true and the value is constrained by ``Literal[...]``
             choices, match case-insensitively and return the choice's declared
             spelling. Has no effect on arguments without choices.
+        relative_to_config: When true, relative paths set for this argument in a
+            config file are resolved against the directory of the file that
+            sets them (including ``extends``-ed files and profiles), so they do
+            not depend on the working directory. Applies to a string value and
+            to the string items of a list; command-line and environment values
+            are left untouched. ``"existing"`` resolves a value only when it
+            (or its part before a ``:args``/``;args`` suffix) exists under
+            that directory, for values that may also be e.g. module names.
     """
     return Argument(
         func,
@@ -239,6 +253,7 @@ def argument(
         config=config,
         metavar=metavar,
         ignore_case=ignore_case,
+        relative_to_config=relative_to_config,
     )
 
 

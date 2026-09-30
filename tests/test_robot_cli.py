@@ -189,8 +189,16 @@ def test_variables_from_config_table(tmp_path: Path) -> None:
 def test_robot_toml_may_use_top_level_keys(tmp_path: Path) -> None:
     (tmp_path / "robot.toml").write_text('data-sources = ["tests"]\n[variable]\nBROWSER = "chrome"\n', encoding="utf-8")
     _, ns = run([], tmp_path)
-    assert ns.data_sources == ["tests"]
+    assert ns.data_sources == [str(tmp_path.resolve() / "tests")]
     assert ns.variable == [("BROWSER", "chrome")]
+
+
+def test_config_data_sources_are_relative_to_the_config_file(tmp_path: Path) -> None:
+    (tmp_path / "robot.toml").write_text('data-sources = ["tests"]\n', encoding="utf-8")
+    sub = tmp_path / "tests" / "nested"
+    sub.mkdir(parents=True)
+    _, ns = run([], sub)
+    assert ns.data_sources == [str(tmp_path.resolve() / "tests")]
 
 
 def test_double_dash_terminates_options(tmp_path: Path) -> None:
