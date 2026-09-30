@@ -23,6 +23,7 @@ from confargs.exceptions import (
 )
 from confargs.namespace import Namespace
 from confargs.options import collect_options, resolve_names
+from confargs.paths import RelativeToConfig, resolve_relative
 from confargs.profiles import build_profile_overlay
 from confargs.toml_source import (
     find_project_config_files,
@@ -110,6 +111,12 @@ class ConfigurationProcessor:
         self.config_disabled = {attr for attr, opt in self.options.items() if not opt.config}
         self.config_disabled |= {attr for attr, arg in self.arguments.items() if not arg.config}
         self.eager = {attr for attr, opt in self.options.items() if opt.is_eager}
+        self.relative_paths: dict[str, RelativeToConfig] = {
+            attr: opt.relative_to_config for attr, opt in self.options.items() if opt.relative_to_config
+        }
+        self.relative_paths.update(
+            (attr, arg.relative_to_config) for attr, arg in self.arguments.items() if arg.relative_to_config
+        )
         self.positionals: list[str] = []
         self._config_keys = self._toml_key_map()
         self._config_keys_lenient = self._lenient_config_key_map()
@@ -463,6 +470,8 @@ class ConfigurationProcessor:
                 raise ConfigDiscoveryError(
                     f"configuration keys {spelled_as[new_key]!r} and {key!r} set the same option{location}"
                 )
+            if new_key in self.relative_paths and path is not None:
+                value = resolve_relative(value, path.resolve().parent, self.relative_paths[new_key])
             canonical[new_key] = value
             spelled_as[new_key] = key
         return canonical

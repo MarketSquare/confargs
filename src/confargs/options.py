@@ -20,6 +20,7 @@ from types import MethodType
 from typing import TYPE_CHECKING, Any, overload
 
 from confargs.exceptions import MISSING, OptionDefinitionError
+from confargs.paths import RelativeToConfig, check_relative_to_config
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -61,6 +62,7 @@ class Option:
         is_eager: bool = False,
         ignore_case: bool = False,
         table_separator: str | None = None,
+        relative_to_config: RelativeToConfig = False,
     ) -> None:
         if table_separator is not None and not table_separator:
             raise OptionDefinitionError("table_separator must be a non-empty string")
@@ -76,6 +78,7 @@ class Option:
         self.is_eager = is_eager
         self.ignore_case = ignore_case
         self.table_separator = table_separator
+        self.relative_to_config = check_relative_to_config(relative_to_config, "option")
         self.attr_name: str = func.__name__ if func is not None else (name or "")
         self.owner: type | None = None
         # Names the option *wants*; short-name collisions are resolved later.
@@ -222,6 +225,7 @@ def option(
     is_eager: bool = ...,
     ignore_case: bool = ...,
     table_separator: str | None = ...,
+    relative_to_config: RelativeToConfig = ...,
 ) -> Option: ...
 
 
@@ -239,6 +243,7 @@ def option(
     is_eager: bool = False,
     ignore_case: bool = False,
     table_separator: str | None = None,
+    relative_to_config: RelativeToConfig = False,
 ) -> Option:
     """Declare an confargs option.
 
@@ -300,6 +305,14 @@ def option(
             as ``--variable NAME:x``. Values must be strings, numbers or
             booleans. Only valid on list options; without it a table given to
             an option is rejected.
+        relative_to_config: When true, relative paths set for this option in a
+            config file are resolved against the directory of the file that
+            sets them (including ``extends``-ed files and profiles), so they do
+            not depend on the working directory. Applies to a string value and
+            to the string items of a list; command-line and environment values
+            are left untouched. ``"existing"`` resolves a value only when it
+            (or its part before a ``:args``/``;args`` suffix) exists under
+            that directory, for values that may also be e.g. module names.
     """
 
     opt = Option(
@@ -315,6 +328,7 @@ def option(
         is_eager=is_eager,
         ignore_case=ignore_case,
         table_separator=table_separator,
+        relative_to_config=relative_to_config,
     )
     return opt
 

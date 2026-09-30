@@ -126,6 +126,28 @@ error. Files given with `--config` or through `extends` may also use the top
 level, unless their name is one of the other `config_names` (e.g.
 `pyproject.toml`).
 
+**Paths relative to the config file.** By default a relative path in a config
+value is used as-is, i.e. relative to the working directory. Declare the option
+(or argument) with `relative_to_config=True` to resolve relative paths against
+the directory of the file that sets them instead, so the tool behaves the same
+from any subdirectory:
+
+```python
+class MyArgs(ArgConfig):
+    paths: list[str] = argument(nargs="*", relative_to_config=True)
+    outdir: str | None = option(name="outdir", default=None, relative_to_config=True)
+```
+
+`paths = ["tests"]` in `/project/mytool.toml` then yields `/project/tests` even
+when run from `/project/tests/nested`. Values in `extends`-ed files resolve
+against their own directory; command-line and environment values are untouched.
+
+For values that may be either a path or something else (a module name, say),
+use `relative_to_config="existing"`: a value is rewritten only when it exists
+under the config file's directory, also checking the part before a trailing
+`:args`/`;args` suffix. `listener = ["MyListener", "tools/listener.py:arg"]`
+keeps `MyListener` and resolves `tools/listener.py` (keeping `:arg`).
+
 By default (`strict_config = True`) unknown keys — and any option declared with
 `config=False` — found in the config section raise an error, which catches typos
 early (an unknown key close to a real option gets a *did you mean ...?* hint).

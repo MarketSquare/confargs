@@ -59,10 +59,12 @@ class RobotArgs(ArgConfig):
     # --- Positional arguments ----------------------------------------------
     # The data sources (suite files or directories) Robot Framework executes.
     # A pure pass-through variadic argument needs no method; the annotation
-    # documents its resolved type.
+    # documents its resolved type. Paths set in a config file are relative to
+    # that file, so `robot` works the same from any subdirectory.
     data_sources: list[str] = argument(
         name="data-sources",
         nargs="*",
+        relative_to_config=True,
         help="Paths to the test data (suite files or directories) to execute.",
     )
 
