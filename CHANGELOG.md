@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > stabilising. Minor (`0.X.0`) releases may include breaking changes; patch
 > (`0.x.Y`) releases are reserved for backwards-compatible fixes.
 
+## [0.11.0](https://github.com/MarketSquare/confargs/compare/v0.10.0...v0.11.0) (2026-09-30)
+
+
+### Features
+
+* let list options accept a TOML table via table_separator ([#47](https://github.com/MarketSquare/confargs/issues/47)) ([b31fe0e](https://github.com/MarketSquare/confargs/commit/b31fe0e07832cc5cee711a79e4c38b30de80153d))
+
 ## [0.10.0](https://github.com/MarketSquare/confargs/compare/v0.9.0...v0.10.0) (2026-09-30)
 
 
