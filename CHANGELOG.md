@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > stabilising. Minor (`0.X.0`) releases may include breaking changes; patch
 > (`0.x.Y`) releases are reserved for backwards-compatible fixes.
 
+## [0.10.0](https://github.com/MarketSquare/confargs/compare/v0.9.0...v0.10.0) (2026-09-30)
+
+
+### Features
+
+* name the offending option in Literal choice errors ([#45](https://github.com/MarketSquare/confargs/issues/45)) ([bb07db6](https://github.com/MarketSquare/confargs/commit/bb07db61afe37f0d83d9fda73d4866b41348dd09))
+
 ## [0.9.0](https://github.com/MarketSquare/confargs/compare/v0.8.0...v0.9.0) (2026-09-01)
 
 
