@@ -29,7 +29,7 @@ def _table(cls: type[ArgConfig]):  # type: ignore[no-untyped-def]
     table = resolve_names(
         opts,
         case_insensitive=getattr(cls, "cli_case_insensitive", False),
-        ignore_hyphens=getattr(cls, "cli_ignore_hyphens", False),
+        ignore_hyphens=getattr(cls, "ignore_hyphens", False),
         allow_abbrev=getattr(cls, "cli_allow_abbrev", False),
     )
     flags = {a for a, o in opts.items() if resolve_value_type(o).is_flag}
@@ -64,7 +64,7 @@ def test_joined_negation_abbreviates_with_ignore_hyphens() -> None:
     class Runner(ArgConfig):
         cli_allow_abbrev = True
         cli_case_insensitive = True
-        cli_ignore_hyphens = True
+        ignore_hyphens = True
         statusrc: bool = option(name="statusrc", default=True)
 
     # ``--nostatusrc`` is the joined negation; abbreviated + case-insensitive
@@ -121,7 +121,7 @@ def test_abbrev_composes_with_case_and_hyphen_leniency() -> None:
     class Lenient(ArgConfig):
         cli_allow_abbrev = True
         cli_case_insensitive = True
-        cli_ignore_hyphens = True
+        ignore_hyphens = True
         removekeywords: list[str] = option(name="removekeywords", default=list)
 
     for spelling in ("--removek", "--RemoveK", "--Remove-K", "--REMOVE-KEY"):
