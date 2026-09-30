@@ -266,16 +266,16 @@ Combine them as needed, e.g. a CLI-only switch is `@option(config=False)` with
   next option. Use the attached form to force it as a value: `--name=-v` (or
   `-n-v` for a short option).
 
-### Lenient command-line names (case, hyphens and abbreviation)
+### Lenient option names (case, hyphens and abbreviation)
 
-By default long options must be spelled exactly as declared. Three opt-in class
-attributes relax this **on the command line only** (config-file keys are always
-matched exactly):
+By default long options — and config-file keys — must be spelled exactly as
+declared (a config key's underscore/hyphen variants of the attribute name are
+always interchangeable). Three opt-in class attributes relax this:
 
 ```python
 class MyArgs(ArgConfig):
     cli_case_insensitive = True  # --VariableFile == --variablefile
-    cli_ignore_hyphens = True  # --variable-file == --variablefile
+    ignore_hyphens = True  # --variable-file == --variablefile
     cli_allow_abbrev = True  # --var == --variablefile (if unambiguous)
 
     variablefile: list[str] = option(name="variablefile", default=list)
@@ -286,7 +286,7 @@ With both enabled, `--variablefile`, `--variable-file`, `--VariableFile` and
 `--VARIABLE-FILE` all resolve to the same option, and a flag can be negated as
 `--no-statusrc`, `--nostatusrc` or `--No-StatusRc`. Enable only one attribute to
 relax just case or just hyphens. If two options would collide once normalised
-(e.g. `--foo-bar` and `--foobar` with `cli_ignore_hyphens`), the lenient
+(e.g. `--foo-bar` and `--foobar` with `ignore_hyphens`), the lenient
 fallback is dropped for that pair and only their exact spellings work.
 
 `cli_allow_abbrev` additionally accepts any **unambiguous prefix** of a long
@@ -297,9 +297,13 @@ listing the candidates. It composes with the two leniency toggles, so with all
 three on `--Var-File` resolves as well. **Short options are never abbreviated**
 (`-n` only ever matches a real `-n`, never a prefix of `--name`).
 
-These toggles never affect configuration files: a `[tool.mytool]` table must use
-the option's declared name (its underscore/hyphen variants are still
-interchangeable, but case is significant).
+`ignore_hyphens` applies to **config-file keys** too, so with it on
+`[tool.mytool]` accepts `variablefile`, `variable-file` and `variable_file`
+alike (in config keys both hyphens and underscores are ignored). Config keys
+stay **case-sensitive**: `cli_case_insensitive` and `cli_allow_abbrev` are
+command-line only, so `VariableFile = ...` is an unknown key and config keys are
+never abbreviated. Giving the same option twice in one table under different
+spellings is an error.
 
 ### Restricting a value to a set of choices
 

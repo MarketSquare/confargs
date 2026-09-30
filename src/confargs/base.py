@@ -41,17 +41,18 @@ class ArgConfig:
         cli_case_insensitive: When true, long options are matched
             case-insensitively on the command line (``--VariableFile`` resolves
             to ``--variablefile``). Disabled by default. Config-file keys are
-            always matched exactly, regardless of this setting.
-        cli_ignore_hyphens: When true, hyphens in long option names are ignored
-            on the command line (``--variable-file`` resolves to
-            ``--variablefile``, and ``--nostatusrc`` negates ``--statusrc``).
-            Disabled by default. Config-file keys are always matched exactly.
+            always case-sensitive, regardless of this setting.
+        ignore_hyphens: When true, hyphens in long option names are ignored on
+            the command line (``--variable-file`` resolves to
+            ``--variablefile``, and ``--nostatusrc`` negates ``--statusrc``),
+            and both hyphens and underscores are ignored in config-file keys
+            (``variable-file`` / ``variable_file``). Disabled by default.
         cli_allow_abbrev: When true, an unambiguous prefix of a long option
             name is accepted on the command line (``--rem`` resolves to
             ``--removekeywords``). An exact match always wins over a prefix, and
             an ambiguous prefix raises an error. Composes with the case- and
             hyphen-insensitive settings. Disabled by default. Short options are
-            never abbreviated and config-file keys are always matched exactly.
+            never abbreviated, and config-file keys are never abbreviated.
     """
 
     tool_name: str | None = None
@@ -61,7 +62,7 @@ class ArgConfig:
     options_env_var: str | None = None
     strict_config: bool = True
     cli_case_insensitive: bool = False
-    cli_ignore_hyphens: bool = False
+    ignore_hyphens: bool = False
     cli_allow_abbrev: bool = False
 
     @option(name="help", short="h", config=False)

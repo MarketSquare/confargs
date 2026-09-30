@@ -29,6 +29,8 @@ from confargs.exceptions import ConfigDiscoveryError
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
 
+    from confargs.toml_source import KeyNormalizer
+
 META_KEYS = frozenset({"inherits", "precedence", "enabled"})
 
 
@@ -92,6 +94,7 @@ def _resolve_one(
     profiles: Mapping[str, Any],
     path: Any,
     stack: tuple[str, ...],
+    normalize: KeyNormalizer | None = None,
 ) -> dict[str, Any]:
     if name in stack:
         chain = " -> ".join([*stack, name])
@@ -101,20 +104,25 @@ def _resolve_one(
     for parent in _inherits(table, name, path):
         if parent not in profiles:
             raise ConfigDiscoveryError(f"profile {name!r} inherits from unknown profile {parent!r}{_location(path)}")
-        resolved.update(_resolve_one(parent, profiles, path, (*stack, name)))
-    for key, value in table.items():
-        if key in META_KEYS:
-            continue
-        resolved[key] = value
+        resolved.update(_resolve_one(parent, profiles, path, (*stack, name), normalize))
+    own = {key: value for key, value in table.items() if key not in META_KEYS}
+    resolved.update(normalize(own, path) if normalize is not None else own)
     return resolved
 
 
-def build_profile_overlay(profiles: Mapping[str, Any], requested: Sequence[str], path: Any = None) -> dict[str, Any]:
+def build_profile_overlay(
+    profiles: Mapping[str, Any],
+    requested: Sequence[str],
+    path: Any = None,
+    *,
+    normalize: KeyNormalizer | None = None,
+) -> dict[str, Any]:
     """Build the merged overlay for the ``requested`` profiles.
 
     Selected profiles are ordered by ``precedence`` (lower first), ties broken
     by selection order, then merged. Directly selected profiles with
     ``enabled = false`` are skipped; inherited parents always contribute.
+    When given, ``normalize(table, path)`` rewrites each profile's keys first.
     """
     selected = select_profiles(profiles, requested, path)
     active = [name for name in selected if _enabled(_profile_table(profiles, name, path), name, path)]
@@ -123,5 +131,5 @@ def build_profile_overlay(profiles: Mapping[str, Any], requested: Sequence[str],
     )
     overlay: dict[str, Any] = {}
     for name in ordered:
-        overlay.update(_resolve_one(name, profiles, path, ()))
+        overlay.update(_resolve_one(name, profiles, path, (), normalize))
     return overlay
