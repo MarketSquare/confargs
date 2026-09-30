@@ -60,7 +60,10 @@ class Option:
         env: bool | str = False,
         is_eager: bool = False,
         ignore_case: bool = False,
+        table_separator: str | None = None,
     ) -> None:
+        if table_separator is not None and not table_separator:
+            raise OptionDefinitionError("table_separator must be a non-empty string")
         self.func = func
         self.explicit_name = name
         self.explicit_short = short
@@ -72,6 +75,7 @@ class Option:
         self.env = env
         self.is_eager = is_eager
         self.ignore_case = ignore_case
+        self.table_separator = table_separator
         self.attr_name: str = func.__name__ if func is not None else (name or "")
         self.owner: type | None = None
         # Names the option *wants*; short-name collisions are resolved later.
@@ -217,6 +221,7 @@ def option(
     env: bool | str = ...,
     is_eager: bool = ...,
     ignore_case: bool = ...,
+    table_separator: str | None = ...,
 ) -> Option: ...
 
 
@@ -233,6 +238,7 @@ def option(
     env: bool | str = False,
     is_eager: bool = False,
     ignore_case: bool = False,
+    table_separator: str | None = None,
 ) -> Option:
     """Declare an confargs option.
 
@@ -287,6 +293,13 @@ def option(
             choice using its declared spelling (e.g. ``--color on`` yields
             ``"ON"`` for ``Literal["AUTO", "ON", "OFF"]``). Has no effect on
             options without choices.
+        table_separator: Let a list option also accept a TOML table in config
+            files. Each ``key = value`` entry becomes the list item
+            ``f"{key}{table_separator}{value}"``, so ``variable = { NAME = "x" }``
+            with ``table_separator=":"`` yields ``["NAME:x"]`` — the same value
+            as ``--variable NAME:x``. Values must be strings, numbers or
+            booleans. Only valid on list options; without it a table given to
+            an option is rejected.
     """
 
     opt = Option(
@@ -301,6 +314,7 @@ def option(
         env=env,
         is_eager=is_eager,
         ignore_case=ignore_case,
+        table_separator=table_separator,
     )
     return opt
 

@@ -337,6 +337,37 @@ class Args(ArgConfig):
 An unknown value is still rejected, and a case-insensitive match is only honoured
 when it is unambiguous.
 
+### Accepting a table for a list option
+
+Some list options hold `key<sep>value` pairs, e.g. `--variable NAME:value`. For
+these, pass `table_separator` so config files can also use a TOML table, which
+reads more naturally than a list of joined strings:
+
+```python
+class Args(ArgConfig):
+    variable: list[str] = option(name="variable", short="v", default=list, table_separator=":")
+```
+
+```toml
+# list form (still works)
+[tool.mytool]
+variable = ["NAME:Robot", "count: int:5"]
+```
+
+```toml
+# equivalent table form: each entry becomes "key:value"
+[tool.mytool.variable]
+NAME = "Robot"
+"count: int" = 5
+```
+
+Both forms give the option the same value as `--variable NAME:Robot`, so the
+option method never has to know which one was used. Table values must be
+strings, numbers or booleans, and are converted with `str()` (`true` becomes
+`"True"`). `table_separator` is only valid on list options. A table given to any
+option that has not opted in is rejected with an `OptionValueError` instead of
+being silently stringified.
+
 ### Eager options and argument files
 
 Mark an option `is_eager=True` to resolve it *before* every other source,
