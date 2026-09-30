@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import difflib
 import os
 import sys
 from pathlib import Path
@@ -409,7 +410,9 @@ class ConfigurationProcessor:
         for key, value in section.items():
             attr = self._config_attr(key)
             if attr is None:
-                invalid.append(f"{key!r} (unknown option)")
+                suggestion = self._suggest_config_key(key)
+                hint = f"; did you mean {suggestion!r}?" if suggestion else ""
+                invalid.append(f"{key!r} (unknown option{hint})")
                 continue
             if attr in self.config_disabled:
                 invalid.append(f"{key!r} (not configurable)")
@@ -444,6 +447,20 @@ class ConfigurationProcessor:
             canonical[new_key] = value
             spelled_as[new_key] = key
         return canonical
+
+    def _suggest_config_key(self, key: str) -> str | None:
+        """Return the closest configurable key to an unknown ``key``, if any is close."""
+        candidates: dict[str, str] = {}
+        for attr, opt in self.options.items():
+            if attr not in self.config_disabled:
+                name = opt.long_names[0].lstrip("-") if opt.long_names else attr
+                candidates.setdefault(self._normalize_config_key(name).lower(), name)
+        for attr, arg in self.arguments.items():
+            if attr not in self.config_disabled:
+                candidates.setdefault(self._normalize_config_key(arg.arg_name).lower(), arg.arg_name)
+        # Compared case-insensitively so a wrongly cased key still gets a hint.
+        matches = difflib.get_close_matches(self._normalize_config_key(key).lower(), candidates, n=1)
+        return candidates[matches[0]] if matches else None
 
     def _config_attr(self, key: str) -> str | None:
         """Resolve a config key to an attribute: exact match, then the lenient map."""
