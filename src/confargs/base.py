@@ -25,6 +25,13 @@ class ArgConfig:
             in priority order.
         default_config_section: Dotted path of the TOML table to read
             (e.g. ``"tool.mytool"``). When unset, ``tool.<tool_name>`` is used.
+        top_level_config_names: Config file names dedicated to this tool (e.g.
+            ``["mytool.toml"]``). When such a file has no config section, its
+            top-level keys are read instead (``[tool.*]`` tables are skipped),
+            like ``ruff.toml``. The section still wins when present; having
+            both is an error. Files passed with ``--config`` or via ``extends``
+            may also use the top level, unless their name is one of the other
+            ``config_names`` (such as ``pyproject.toml``). Empty by default.
         env_var_template: Template used to build the environment variable name
             for options declared with ``env=True``. Formatted with ``name``
             (the tool name) and ``option`` (the attribute name), then
@@ -58,6 +65,7 @@ class ArgConfig:
     tool_name: str | None = None
     config_names: list[str] = ["pyproject.toml"]  # noqa: RUF012 - documented, per-subclass override
     default_config_section: str | None = None
+    top_level_config_names: list[str] = []  # noqa: RUF012 - documented, per-subclass override
     env_var_template: str = "{name}_{option}"
     options_env_var: str | None = None
     strict_config: bool = True

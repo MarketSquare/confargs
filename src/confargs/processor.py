@@ -338,15 +338,15 @@ class ConfigurationProcessor:
 
         explicit = cli_values.get("config")
         if explicit:
-            path, data = first_section_with_path([Path(explicit)], section)
+            path, data = first_section_with_path([Path(explicit)], section, self._explicit_top_level)
             return self._apply_profiles(data, path, requested), {}
 
         ignore_git = bool(cli_values.get("ignore_git"))
         project_files = find_project_config_files(self.cwd, config_names, ignore_git=ignore_git)
-        nearest_path, nearest = first_section_with_path(project_files, section)
+        nearest_path, nearest = first_section_with_path(project_files, section, self._discovered_top_level)
 
         user_files = find_user_config_files(self.instance.resolved_tool_name, config_names)
-        user_path, user = first_section_with_path(user_files, section)
+        user_path, user = first_section_with_path(user_files, section, self._discovered_top_level)
         return (
             self._apply_profiles(nearest, nearest_path, requested),
             self._map_toml(self._strip_profiles(self._resolve_extends(user, user_path)), user_path),
@@ -364,7 +364,26 @@ class ConfigurationProcessor:
         if path is None:
             own = {key: value for key, value in section.items() if key != "extends"}
             return self._canonicalize_keys(own, path)
-        return resolve_extends(section, path, self.instance.config_section, normalize=self._canonicalize_keys)
+        return resolve_extends(
+            section,
+            path,
+            self.instance.config_section,
+            normalize=self._canonicalize_keys,
+            top_level=self._explicit_top_level,
+        )
+
+    def _discovered_top_level(self, path: Path) -> bool:
+        """Whether a discovered file may hold its settings at the top level."""
+        return path.name in self.instance.top_level_config_names
+
+    def _explicit_top_level(self, path: Path) -> bool:
+        """Whether a user-chosen file (``--config`` / ``extends``) may use the top level.
+
+        Any file qualifies once the feature is enabled, except the discovered
+        file names that are *not* dedicated to this tool (e.g. ``pyproject.toml``).
+        """
+        names = self.instance.top_level_config_names
+        return bool(names) and (path.name in names or path.name not in self.instance.config_names)
 
     @staticmethod
     def _strip_profiles(section: Mapping[str, Any] | None) -> dict[str, Any]:
