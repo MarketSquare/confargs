@@ -139,7 +139,9 @@ class RobotArgs(ArgConfig):
     )
 
     # --- Variables ----------------------------------------------------------
-    @option(name="variable", short="v")
+    # ``table_separator`` lets config files also use a table,
+    # ``[tool.robot.variable] name = "value"``, equivalent to ``-v name:value``.
+    @option(name="variable", short="v", table_separator=":")
     def variable(self, value: list[str] | None = None) -> list[tuple[str, str]]:
         """Set variables in the test data. Only scalar variables with string
         value are supported. Example: --variable name:value.

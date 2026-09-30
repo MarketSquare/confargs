@@ -178,6 +178,14 @@ def test_positional_data_sources_are_collected(tmp_path: Path) -> None:
     assert ns.data_sources == ["tests/suite_a", "tests/suite_b"]
 
 
+def test_variables_from_config_table(tmp_path: Path) -> None:
+    (tmp_path / "robot.toml").write_text(
+        '[tool.robot.variable]\nBROWSER = "chrome"\nURL = "http://example.com"\n', encoding="utf-8"
+    )
+    _, ns = run(["tests"], tmp_path)
+    assert ns.variable == [("BROWSER", "chrome"), ("URL", "http://example.com")]
+
+
 def test_double_dash_terminates_options(tmp_path: Path) -> None:
     processor, ns = run(["--name", "S", "--", "--not-an-option", "tests"], tmp_path)
     assert ns.name == "S"

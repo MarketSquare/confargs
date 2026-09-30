@@ -17,10 +17,11 @@ from __future__ import annotations
 
 import types
 import typing
+from collections.abc import Mapping
 from dataclasses import dataclass, replace
 from typing import Any, Literal, Union, get_args, get_origin
 
-from confargs.exceptions import MISSING, OptionValueError
+from confargs.exceptions import MISSING, OptionDefinitionError, OptionValueError
 
 if typing.TYPE_CHECKING:
     from confargs.arguments import Argument
@@ -30,6 +31,7 @@ _TRUE = {"1", "true", "yes", "on", "y", "t"}
 _FALSE = {"0", "false", "no", "off", "n", "f"}
 
 _UNION_ORIGINS = {Union, types.UnionType}
+_SCALAR_BASES = (str, int, float, bool)
 
 
 @dataclass(frozen=True)
@@ -41,6 +43,7 @@ class ValueType:
     allows_none: bool = False
     choices: tuple[Any, ...] | None = None
     ignore_case: bool = False
+    table_separator: str | None = None
 
     @property
     def is_flag(self) -> bool:
@@ -53,6 +56,11 @@ def resolve_value_type(option: Option | Argument) -> ValueType:
     value_type = _resolve_declared_type(option)
     if getattr(option, "ignore_case", False) and not value_type.ignore_case:
         value_type = replace(value_type, ignore_case=True)
+    separator = getattr(option, "table_separator", None)
+    if separator is not None:
+        if not value_type.is_list:
+            raise OptionDefinitionError(f"option {option.attr_name!r}: table_separator requires a list option")
+        value_type = replace(value_type, table_separator=separator)
     return value_type
 
 
@@ -207,14 +215,34 @@ def _check_choice(
     raise OptionValueError(message)
 
 
+def _invalid(detail: str, context: str | None) -> OptionValueError:
+    return OptionValueError(f"Invalid value for {context}: {detail}" if context else detail)
+
+
+def _flatten_table(table: Mapping[Any, Any], separator: str, context: str | None) -> list[str]:
+    """Turn a TOML table into ``key<separator>value`` items."""
+    items = []
+    for key, value in table.items():
+        if not isinstance(value, (str, int, float, bool)):
+            raise _invalid(
+                f"Expected a string, number or boolean for table entry {key!r}, got {type(value).__name__}.",
+                context,
+            )
+        items.append(f"{key}{separator}{value}")
+    return items
+
+
 def coerce_value(raw: Any, value_type: ValueType, *, context: str | None = None) -> Any:
     """Coerce a raw source value into the option's declared type.
 
     ``None`` is passed through when the option allows it. List options accept
     native sequences (TOML arrays, repeated CLI flags) or comma-separated
-    strings (environment variables). When the type was declared with
-    ``Literal[...]``, each coerced value is validated against the allowed set;
-    ``context`` (e.g. ``"option '--console'"``) is then included in the error.
+    strings (environment variables), and — when declared with
+    ``table_separator`` — a TOML table flattened into ``key<sep>value`` items.
+    A table is rejected for any other option rather than silently stringified.
+    When the type was declared with ``Literal[...]``, each coerced value is
+    validated against the allowed set; ``context`` (e.g. ``"option '--console'"``)
+    is then included in the error.
     """
     if raw is None:
         if value_type.allows_none:
@@ -222,7 +250,14 @@ def coerce_value(raw: Any, value_type: ValueType, *, context: str | None = None)
         raise OptionValueError("value may not be null")
 
     if value_type.is_list:
-        items = [_coerce_scalar(item, value_type.base) for item in _as_list(raw)]
+        if isinstance(raw, Mapping) and value_type.base in _SCALAR_BASES:
+            if value_type.table_separator is None:
+                raise _invalid("Expected a list, got a table.", context)
+            raw = _flatten_table(raw, value_type.table_separator, context)
+        raw_items = _as_list(raw)
+        if value_type.base in _SCALAR_BASES and any(isinstance(item, Mapping) for item in raw_items):
+            raise _invalid("Expected a list of values, got a table inside the list.", context)
+        items = [_coerce_scalar(item, value_type.base) for item in raw_items]
         if value_type.choices is not None:
             items = [
                 _check_choice(item, value_type.choices, ignore_case=value_type.ignore_case, context=context)
@@ -230,6 +265,8 @@ def coerce_value(raw: Any, value_type: ValueType, *, context: str | None = None)
             ]
         return items
 
+    if isinstance(raw, Mapping) and value_type.base in _SCALAR_BASES:
+        raise _invalid("Expected a single value, got a table.", context)
     value = _coerce_scalar(raw, value_type.base)
     if value_type.choices is not None:
         return _check_choice(value, value_type.choices, ignore_case=value_type.ignore_case, context=context)
