@@ -100,7 +100,8 @@ CLI-only options:
 
 By default (`strict_config = True`) unknown keys — and any option declared with
 `config=False` — found in the config section raise an error, which catches typos
-early. Set `strict_config = False` on your class to silently ignore them instead.
+early (an unknown key close to a real option gets a *did you mean ...?* hint).
+Set `strict_config = False` on your class to silently ignore them instead.
 
 ### Profiles
 
