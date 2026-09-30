@@ -188,12 +188,12 @@ def test_double_dash_terminates_options(tmp_path: Path) -> None:
 @pytest.mark.parametrize(
     ("argv", "match"),
     [
-        (["--console", "fancy", "tests"], "invalid value 'fancy'"),
+        (["--console", "fancy", "tests"], "got 'fancy'"),
         (["--variable", "novalue", "tests"], "variable"),
         (["--loglevel", "BOGUS", "tests"], "loglevel"),
         (["--randomize", "maybe", "tests"], "randomize"),
-        (["--consolecolors", "rainbow", "tests"], "invalid value 'rainbow'"),
-        (["--consolemarkers", "sometimes", "tests"], "invalid value 'sometimes'"),
+        (["--consolecolors", "rainbow", "tests"], "got 'rainbow'"),
+        (["--consolemarkers", "sometimes", "tests"], "got 'sometimes'"),
     ],
 )
 def test_invalid_values_are_rejected(argv: list[str], match: str, tmp_path: Path) -> None:

@@ -170,13 +170,30 @@ def _as_list(raw: Any) -> list[Any]:
     return [raw]
 
 
-def _check_choice(value: Any, choices: tuple[Any, ...], *, ignore_case: bool = False) -> Any:
+def _humanize_choices(choices: tuple[Any, ...]) -> str:
+    """Render ``choices`` as ``'A', 'B' or 'C'`` (no Oxford comma)."""
+    parts = [repr(choice) for choice in choices]
+    if len(parts) == 1:
+        return parts[0]
+    return f"{', '.join(parts[:-1])} or {parts[-1]}"
+
+
+def _check_choice(
+    value: Any,
+    choices: tuple[Any, ...],
+    *,
+    ignore_case: bool = False,
+    context: str | None = None,
+) -> Any:
     """Return ``value`` if it matches one of ``choices``, else raise.
 
     With ``ignore_case`` a string value matches a choice regardless of case, and
     the *canonical* choice (as declared in the ``Literal[...]``) is returned so
     downstream code always sees the declared spelling. A case-insensitive match
     is only honoured when it is unambiguous.
+
+    ``context`` (e.g. ``"option '--console'"``) is included in the error message
+    when the value is rejected so the failure identifies the offending option.
     """
     if value in choices:
         return value
@@ -185,17 +202,19 @@ def _check_choice(value: Any, choices: tuple[Any, ...], *, ignore_case: bool = F
         matches = [choice for choice in choices if isinstance(choice, str) and choice.casefold() == folded]
         if len(matches) == 1:
             return matches[0]
-    allowed = ", ".join(repr(choice) for choice in choices)
-    raise OptionValueError(f"invalid value {value!r}; choose from {allowed}")
+    detail = f"Expected {_humanize_choices(choices)}, got {value!r}."
+    message = f"Invalid value for {context}: {detail}" if context else detail
+    raise OptionValueError(message)
 
 
-def coerce_value(raw: Any, value_type: ValueType) -> Any:
+def coerce_value(raw: Any, value_type: ValueType, *, context: str | None = None) -> Any:
     """Coerce a raw source value into the option's declared type.
 
     ``None`` is passed through when the option allows it. List options accept
     native sequences (TOML arrays, repeated CLI flags) or comma-separated
     strings (environment variables). When the type was declared with
-    ``Literal[...]``, each coerced value is validated against the allowed set.
+    ``Literal[...]``, each coerced value is validated against the allowed set;
+    ``context`` (e.g. ``"option '--console'"``) is then included in the error.
     """
     if raw is None:
         if value_type.allows_none:
@@ -205,10 +224,13 @@ def coerce_value(raw: Any, value_type: ValueType) -> Any:
     if value_type.is_list:
         items = [_coerce_scalar(item, value_type.base) for item in _as_list(raw)]
         if value_type.choices is not None:
-            items = [_check_choice(item, value_type.choices, ignore_case=value_type.ignore_case) for item in items]
+            items = [
+                _check_choice(item, value_type.choices, ignore_case=value_type.ignore_case, context=context)
+                for item in items
+            ]
         return items
 
     value = _coerce_scalar(raw, value_type.base)
     if value_type.choices is not None:
-        return _check_choice(value, value_type.choices, ignore_case=value_type.ignore_case)
+        return _check_choice(value, value_type.choices, ignore_case=value_type.ignore_case, context=context)
     return value

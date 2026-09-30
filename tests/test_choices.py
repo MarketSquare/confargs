@@ -36,19 +36,22 @@ def test_valid_scalar_choice() -> None:
 
 
 def test_invalid_scalar_choice_rejected() -> None:
-    with pytest.raises(OptionValueError, match="invalid value 'fancy'; choose from"):
+    with pytest.raises(
+        OptionValueError,
+        match=r"Invalid value for option '--console': Expected 'verbose', 'dotted', 'quiet' or 'none', got 'fancy'\.",
+    ):
         _run(Choices, ["--console", "fancy"])
 
 
 def test_int_literal_coerced_and_validated() -> None:
     assert _run(Choices, ["--level", "2"]).level == 2
-    with pytest.raises(OptionValueError, match="choose from 1, 2, 3"):
+    with pytest.raises(OptionValueError, match=r"Expected 1, 2 or 3, got 9\."):
         _run(Choices, ["--level", "9"])
 
 
 def test_list_of_literals() -> None:
     assert _run(Choices, ["--langs", "en", "--langs", "pl"]).langs == ["en", "pl"]
-    with pytest.raises(OptionValueError, match="invalid value 'de'"):
+    with pytest.raises(OptionValueError, match=r"Expected 'en' or 'pl', got 'de'\."):
         _run(Choices, ["--langs", "de"])
 
 
@@ -61,7 +64,7 @@ def test_optional_literal_allows_none() -> None:
 
 def test_literal_on_method_parameter() -> None:
     assert _run(Choices, ["--fmt", "yaml"]).fmt == "yaml"
-    with pytest.raises(OptionValueError, match="choose from 'json', 'yaml'"):
+    with pytest.raises(OptionValueError, match=r"Expected 'json' or 'yaml', got 'xml'\."):
         _run(Choices, ["--fmt", "xml"])
 
 
@@ -71,7 +74,10 @@ def test_argument_literal_validated() -> None:
         action: Literal["run", "list"] = argument(name="action")
 
     assert _run(Cmd, ["run"]).action == "run"
-    with pytest.raises(OptionValueError, match="invalid value 'stop'"):
+    with pytest.raises(
+        OptionValueError,
+        match=r"Invalid value for argument 'ACTION': Expected 'run' or 'list', got 'stop'\.",
+    ):
         _run(Cmd, ["stop"])
 
 
@@ -95,7 +101,7 @@ def test_invalid_literal_from_toml_rejected(tmp_path) -> None:
         '[tool.choices]\nconsole = "bogus"\n',
         encoding="utf-8",
     )
-    with pytest.raises(OptionValueError, match="invalid value 'bogus'"):
+    with pytest.raises(OptionValueError, match=r"Expected 'verbose', 'dotted', 'quiet' or 'none', got 'bogus'\."):
         _run(Choices, [], cwd=tmp_path)
 
 
@@ -121,7 +127,7 @@ def test_ignore_case_scalar_normalises_to_declared_spelling() -> None:
 
 
 def test_ignore_case_still_rejects_unknown_value() -> None:
-    with pytest.raises(OptionValueError, match="invalid value 'purple'; choose from"):
+    with pytest.raises(OptionValueError, match=r"Expected 'AUTO', 'ON', 'OFF' or 'ANSI', got 'purple'\."):
         _icc(["--colors", "purple", "Run"])
 
 
@@ -146,5 +152,5 @@ def test_ignore_case_from_toml_config(tmp_path) -> None:
 
 def test_case_sensitive_by_default() -> None:
     # Without ``ignore_case`` the match remains exact.
-    with pytest.raises(OptionValueError, match="invalid value 'DOTTED'"):
+    with pytest.raises(OptionValueError, match=r"Expected 'verbose', 'dotted', 'quiet' or 'none', got 'DOTTED'\."):
         _run(Choices, ["--console", "DOTTED"])
