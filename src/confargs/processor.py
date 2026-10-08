@@ -36,6 +36,9 @@ if TYPE_CHECKING:
     from confargs.arguments import Argument
     from confargs.options import Option
 
+# Structural keys of a config section that are never option names.
+_RESERVED_CONFIG_KEYS = frozenset({"profiles", "extends"})
+
 
 def _materialize_default(default: Any) -> Any:
     """Produce a default value, invoking a callable as a *factory*.
@@ -96,7 +99,7 @@ class ConfigurationProcessor:
         self.table = resolve_names(
             self.options,
             case_insensitive=self.instance.cli_case_insensitive,
-            ignore_hyphens=self.instance.cli_ignore_hyphens,
+            ignore_hyphens=self.instance.ignore_hyphens,
             allow_abbrev=self.instance.cli_allow_abbrev,
         )
         self.value_types = {attr: resolve_value_type(opt) for attr, opt in self.options.items()}
@@ -107,6 +110,8 @@ class ConfigurationProcessor:
         self.config_disabled |= {attr for attr, arg in self.arguments.items() if not arg.config}
         self.eager = {attr for attr, opt in self.options.items() if opt.is_eager}
         self.positionals: list[str] = []
+        self._config_keys = self._toml_key_map()
+        self._config_keys_lenient = self._lenient_config_key_map()
 
     @staticmethod
     def _argument_value_type(argument: Argument) -> ValueType:
@@ -356,8 +361,9 @@ class ConfigurationProcessor:
         if not section:
             return {}
         if path is None:
-            return {key: value for key, value in section.items() if key != "extends"}
-        return resolve_extends(section, path, self.instance.config_section)
+            own = {key: value for key, value in section.items() if key != "extends"}
+            return self._canonicalize_keys(own, path)
+        return resolve_extends(section, path, self.instance.config_section, normalize=self._canonicalize_keys)
 
     @staticmethod
     def _strip_profiles(section: Mapping[str, Any] | None) -> dict[str, Any]:
@@ -389,7 +395,7 @@ class ConfigurationProcessor:
             if not isinstance(profiles, dict) or not profiles:
                 location = f" in {path}" if path is not None else ""
                 raise ConfigDiscoveryError(f"--profile was given but no profiles are defined{location}")
-            data.update(build_profile_overlay(profiles, requested, path))
+            data.update(build_profile_overlay(profiles, requested, path, normalize=self._canonicalize_keys))
         return self._map_toml(data, path)
 
     def _map_toml(self, section: Mapping[str, Any], path: Path | None) -> dict[str, Any]:
@@ -398,11 +404,10 @@ class ConfigurationProcessor:
         In strict mode, unknown keys and options declared with ``config=False``
         are reported as errors instead of being silently ignored.
         """
-        key_map = self._toml_key_map()
         mapped: dict[str, Any] = {}
         invalid: list[str] = []
         for key, value in section.items():
-            attr = key_map.get(key)
+            attr = self._config_attr(key)
             if attr is None:
                 invalid.append(f"{key!r} (unknown option)")
                 continue
@@ -416,6 +421,58 @@ class ConfigurationProcessor:
             joined = ", ".join(invalid)
             raise ConfigDiscoveryError(f"invalid configuration keys{location}: {joined}")
         return mapped
+
+    def _canonicalize_keys(self, table: Mapping[str, Any], path: Path | None) -> dict[str, Any]:
+        """Rename the keys of one raw config table to their option attribute names.
+
+        Runs on every table (base section, ``extends``-ed sections, profiles)
+        before they are merged, so differently spelled keys for the same option
+        (``output-dir`` vs ``outputdir``) override each other as expected.
+        Unknown, reserved and non-configurable keys are kept verbatim for later
+        validation. Two spellings of one option in the same table are an error.
+        """
+        canonical: dict[str, Any] = {}
+        spelled_as: dict[str, str] = {}
+        for key, value in table.items():
+            attr = None if key in _RESERVED_CONFIG_KEYS else self._config_attr(key)
+            new_key = key if attr is None or attr in self.config_disabled else attr
+            if new_key in canonical:
+                location = f" in {path}" if path is not None else ""
+                raise ConfigDiscoveryError(
+                    f"configuration keys {spelled_as[new_key]!r} and {key!r} set the same option{location}"
+                )
+            canonical[new_key] = value
+            spelled_as[new_key] = key
+        return canonical
+
+    def _config_attr(self, key: str) -> str | None:
+        """Resolve a config key to an attribute: exact match, then the lenient map."""
+        attr = self._config_keys.get(key)
+        if attr is None and self._config_keys_lenient:
+            attr = self._config_keys_lenient.get(self._normalize_config_key(key))
+        return attr
+
+    def _normalize_config_key(self, key: str) -> str:
+        if self.instance.ignore_hyphens:
+            key = key.replace("-", "").replace("_", "")
+        return key
+
+    def _lenient_config_key_map(self) -> dict[str, str]:
+        """Map normalised config keys to attributes; empty unless leniency is on.
+
+        Keys that would become ambiguous once normalised are left out, so those
+        options only match through their exact spellings.
+        """
+        if not self.instance.ignore_hyphens:
+            return {}
+        lenient: dict[str, str] = {}
+        ambiguous: set[str] = set()
+        for key, attr in self._config_keys.items():
+            norm = self._normalize_config_key(key)
+            if lenient.get(norm, attr) != attr:
+                ambiguous.add(norm)
+            lenient[norm] = attr
+        return {norm: attr for norm, attr in lenient.items() if norm not in ambiguous}
 
     def _toml_key_map(self) -> dict[str, str]:
         mapping: dict[str, str] = {}

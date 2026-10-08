@@ -22,7 +22,9 @@ else:  # pragma: no cover - exercised only on Python 3.10
     import tomli as tomllib
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Mapping, Sequence
+    from collections.abc import Callable, Iterable, Mapping, Sequence
+
+    KeyNormalizer = Callable[[Mapping[str, Any], Path | None], dict[str, Any]]
 
 
 EXTENDS_KEY = "extends"
@@ -57,6 +59,7 @@ def resolve_extends(
     path: Path,
     section_keys: Sequence[str],
     *,
+    normalize: KeyNormalizer | None = None,
     _seen: frozenset[Path] = frozenset(),
 ) -> dict[str, Any]:
     """Merge ``section`` with the config files it ``extends``, own keys winning.
@@ -67,10 +70,13 @@ def resolve_extends(
     Merging is a shallow override (no list concatenation), matching the rest of
     the precedence model. Extended files may themselves ``extends`` others;
     cycles raise :class:`ConfigDiscoveryError`. The reserved ``extends`` key is
-    stripped from the result so it never reaches option mapping.
+    stripped from the result so it never reaches option mapping. When given,
+    ``normalize(table, path)`` rewrites each file's keys before merging.
     """
     seen = _seen | {path.resolve()}
     own = {key: value for key, value in section.items() if key != EXTENDS_KEY}
+    if normalize is not None:
+        own = normalize(own, path)
     extends = section.get(EXTENDS_KEY)
     if not extends:
         return own
@@ -82,7 +88,7 @@ def resolve_extends(
         if ext_section is None:
             joined = ".".join(section_keys)
             raise ConfigDiscoveryError(f"extended config {ext_path} has no [{joined}] section")
-        merged.update(resolve_extends(ext_section, ext_path, section_keys, _seen=seen))
+        merged.update(resolve_extends(ext_section, ext_path, section_keys, normalize=normalize, _seen=seen))
     merged.update(own)
     return merged
 

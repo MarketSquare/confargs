@@ -1,4 +1,4 @@
-"""Tests for lenient (case- and hyphen-insensitive) CLI option matching."""
+"""Tests for lenient (case- and hyphen-insensitive) option and config key matching."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ from confargs.processor import ConfigurationProcessor
 
 class Tool(ArgConfig):
     cli_case_insensitive = True
-    cli_ignore_hyphens = True
+    ignore_hyphens = True
     strict_config = False
 
     variablefile: list[str] = option(name="variablefile", default=list)
@@ -29,7 +29,7 @@ def _lenient_table(cls: type[ArgConfig]):  # type: ignore[no-untyped-def]
     table = resolve_names(
         opts,
         case_insensitive=cls.cli_case_insensitive,
-        ignore_hyphens=cls.cli_ignore_hyphens,
+        ignore_hyphens=cls.ignore_hyphens,
     )
     flags = {a for a, o in opts.items() if resolve_value_type(o).is_flag}
     lists = {a for a, o in opts.items() if resolve_value_type(o).is_list}
@@ -85,7 +85,7 @@ def test_case_insensitive_only_keeps_hyphens_significant() -> None:
 
 def test_hyphen_insensitive_only_keeps_case_significant() -> None:
     class HyphenOnly(ArgConfig):
-        cli_ignore_hyphens = True
+        ignore_hyphens = True
         variablefile: list[str] = option(name="variablefile", default=list)
 
     table, _flags, lists = _lenient_table(HyphenOnly)
@@ -96,7 +96,7 @@ def test_hyphen_insensitive_only_keeps_case_significant() -> None:
 
 def test_ambiguous_normalized_names_keep_exact_only() -> None:
     class Ambiguous(ArgConfig):
-        cli_ignore_hyphens = True
+        ignore_hyphens = True
         foobar: str | None = option(name="foo-bar", default=None)
         foobar2: str | None = option(name="foobar", default=None)
 
@@ -109,27 +109,66 @@ def test_ambiguous_normalized_names_keep_exact_only() -> None:
     assert table.long_attr("--foo--bar") is None
 
 
-def test_config_keys_stay_exact_with_lenient_cli(tmp_path: Path) -> None:
-    class Configurable(ArgConfig):
-        tool_name = "mytool"
-        config_names = ["conf.toml"]  # noqa: RUF012
-        cli_case_insensitive = True
-        cli_ignore_hyphens = True
-        variable_file: list[str] = option(name="variable_file", default=list)
-        data: list[str] = argument(name="data", nargs="*")
+def _config_tool(**flags: bool) -> type[ArgConfig]:
+    attrs: dict[str, object] = {
+        "tool_name": "mytool",
+        "config_names": ["conf.toml"],
+        "variablefile": option(name="variablefile", default=list),
+        "output_dir": option(name="outputdir", default=None),
+        "data": argument(name="data", nargs="*"),
+        "__annotations__": {"variablefile": list[str], "output_dir": "str | None", "data": list[str]},
+    }
+    attrs.update(flags)
+    return type("Configurable", (ArgConfig,), attrs)
 
-    cfg = tmp_path / "conf.toml"
 
-    # Exact name (underscore) and its dash variant are accepted in config.
-    for key in ("variable_file", "variable-file"):
-        cfg.write_text(f'[tool.mytool]\n{key} = ["x"]\n')
-        ns = ConfigurationProcessor(Configurable, argv=[], environ={}, cwd=tmp_path).process()
-        assert ns.as_dict()["variable_file"] == ["x"]
+def _config(cls: type[ArgConfig], tmp_path: Path, body: str) -> dict[str, object]:
+    (tmp_path / "conf.toml").write_text(body)
+    return ConfigurationProcessor(cls, argv=[], environ={}, cwd=tmp_path).process().as_dict()
 
-    # A case-variant is NOT accepted in config even though the CLI is lenient.
-    cfg.write_text('[tool.mytool]\nVariableFile = ["x"]\n')
-    with pytest.raises(ArgConfigError):
-        ConfigurationProcessor(Configurable, argv=[], environ={}, cwd=tmp_path).process()
+
+@pytest.mark.parametrize("key", ["variablefile", "variable-file", "variable_file", "variable__file"])
+def test_config_keys_ignore_hyphens_and_underscores(tmp_path: Path, key: str) -> None:
+    cls = _config_tool(ignore_hyphens=True)
+    assert _config(cls, tmp_path, f'[tool.mytool]\n{key} = ["x"]\n')["variablefile"] == ["x"]
+
+
+def test_config_keys_stay_exact_by_default(tmp_path: Path) -> None:
+    cls = _config_tool()
+    # The attribute name and its dash variant always work...
+    assert _config(cls, tmp_path, '[tool.mytool]\noutput-dir = "o"\n')["output_dir"] == "o"
+    # ...but other spellings of the long name do not.
+    for key in ("variable-file", "VariableFile"):
+        with pytest.raises(ArgConfigError, match="unknown option"):
+            _config(cls, tmp_path, f'[tool.mytool]\n{key} = ["x"]\n')
+
+
+@pytest.mark.parametrize("key", ["VariableFile", "VARIABLE-FILE", "Variable_File"])
+def test_config_keys_are_case_sensitive_even_with_cli_case_insensitive(tmp_path: Path, key: str) -> None:
+    cls = _config_tool(cli_case_insensitive=True, ignore_hyphens=True)
+    with pytest.raises(ArgConfigError, match="unknown option"):
+        _config(cls, tmp_path, f'[tool.mytool]\n{key} = ["x"]\n')
+
+
+def test_config_key_given_twice_under_different_spellings_is_an_error(tmp_path: Path) -> None:
+    cls = _config_tool(ignore_hyphens=True)
+    with pytest.raises(ArgConfigError, match="'variablefile' and 'variable-file' set the same option"):
+        _config(cls, tmp_path, '[tool.mytool]\nvariablefile = ["a"]\nvariable-file = ["b"]\n')
+
+
+def test_profile_overrides_base_key_spelled_differently(tmp_path: Path) -> None:
+    cls = _config_tool(ignore_hyphens=True)
+    body = '[tool.mytool]\noutputdir = "base"\n[tool.mytool.profiles.ci]\noutput-dir = "ci"\n'
+    (tmp_path / "conf.toml").write_text(body)
+    ns = ConfigurationProcessor(cls, argv=["--profile", "ci"], environ={}, cwd=tmp_path).process()
+    assert ns.as_dict()["output_dir"] == "ci"
+
+
+def test_own_key_overrides_extended_key_spelled_differently(tmp_path: Path) -> None:
+    cls = _config_tool(ignore_hyphens=True)
+    (tmp_path / "base.toml").write_text('[tool.mytool]\noutput_dir = "base"\n')
+    body = '[tool.mytool]\nextends = "base.toml"\noutputdir = "own"\n'
+    assert _config(cls, tmp_path, body)["output_dir"] == "own"
 
 
 def test_processor_end_to_end_lenient() -> None:

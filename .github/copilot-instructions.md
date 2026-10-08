@@ -52,7 +52,7 @@ releases.
 
 | Module | Responsibility |
 |--------|----------------|
-| `base.py` | `ArgConfig` base class + builtin options (`help`, `config`, `no-config`, `ignore-git`, `profile`). Class attrs: `tool_name`, `config_names`, `default_config_section`, `env_var_template`, `options_env_var`, `strict_config`. |
+| `base.py` | `ArgConfig` base class + builtin options (`help`, `config`, `no-config`, `ignore-git`, `profile`). Class attrs: `tool_name`, `config_names`, `default_config_section`, `env_var_template`, `options_env_var`, `strict_config`, `cli_case_insensitive`, `ignore_hyphens`, `cli_allow_abbrev`. |
 | `options.py` | `Option` descriptor, the `option()` factory, name/short derivation, `resolve_names`, `collect_options`. |
 | `arguments.py` | `Argument` descriptor + `argument()` factory for positionals (`nargs` 1/`?`/`*`/`+`), `collect_arguments` (variadic must be last). |
 | `coercion.py` | `resolve_value_type` (building a `ValueType`) + `coerce_value` + `parse_bool` — the only place that converts raw values into declared types (incl. `Literal[...]` choices). |
@@ -86,6 +86,10 @@ releases.
   replaces its own argv span. This is how `--argumentfile` injects more args.
 - **Strict config:** `strict_config=True` (default) rejects unknown keys and
   `config=False` keys found in a TOML section.
+- **Lenient names:** `ignore_hyphens` applies to both CLI long options and
+  config keys (config also ignores underscores); config keys are canonicalised
+  per table before `extends`/profile merging. Config keys are always
+  case-sensitive: `cli_case_insensitive` and `cli_allow_abbrev` are CLI-only.
 - **Boolean flags negate** with `--no-<name>` automatically.
 
 ## Workflow for changes
