@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > stabilising. Minor (`0.X.0`) releases may include breaking changes; patch
 > (`0.x.Y`) releases are reserved for backwards-compatible fixes.
 
+## [0.12.0](https://github.com/MarketSquare/confargs/compare/v0.11.0...v0.12.0) (2026-10-08)
+
+
+### Features
+
+* apply hyphen leniency to config keys ([#49](https://github.com/MarketSquare/confargs/issues/49)) ([79a400c](https://github.com/MarketSquare/confargs/commit/79a400cb59b25ef18276b341f5f6c9a0d27f77b4))
+* read dedicated config files from their top level ([#51](https://github.com/MarketSquare/confargs/issues/51)) ([cab9dac](https://github.com/MarketSquare/confargs/commit/cab9dacbe6cfef97554af0de28d3d525660df42b))
+* resolve config paths relative to the config file ([#52](https://github.com/MarketSquare/confargs/issues/52)) ([1fec98d](https://github.com/MarketSquare/confargs/commit/1fec98d2e0dc34a4356cb39ff876e4f72de40b9c))
+* suggest the closest option for unknown config keys ([#50](https://github.com/MarketSquare/confargs/issues/50)) ([49cb13b](https://github.com/MarketSquare/confargs/commit/49cb13bcb07b537018d7030362378a3bfc770ae5))
+
 ## [0.11.0](https://github.com/MarketSquare/confargs/compare/v0.10.0...v0.11.0) (2026-09-30)
 
 
