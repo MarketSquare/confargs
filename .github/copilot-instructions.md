@@ -61,6 +61,7 @@ releases.
 | `env_source.py` | Opt-in env var reading (`option(env=...)`), name templating, `options_env_var` splitting. |
 | `toml_source.py` | TOML discovery (cwd upward, stop at `.git`), section lookup (incl. top-level fallback for `top_level_config_names`), key mapping, `extends` resolution. |
 | `profiles.py` | Named config overlays (`<section>.profiles.<name>`): selection/globbing, `inherits`, `precedence`, `enabled`. |
+| `paths.py` | `relative_to_config` modes and resolving config-file paths against the file's directory. |
 | `argfile.py` | `read_argument_file` / `split_argument_file` for eager `--argumentfile`. |
 | `namespace.py` | Immutable `Namespace` result object. |
 | `exceptions.py` | Error hierarchy + `MISSING` sentinel + `Exit`. |
@@ -86,6 +87,11 @@ releases.
   replaces its own argv span. This is how `--argumentfile` injects more args.
 - **Strict config:** `strict_config=True` (default) rejects unknown keys and
   `config=False` keys found in a TOML section.
+- **Config-relative paths are opt-in:** `relative_to_config=True` on an option or
+  argument resolves relative path strings from a config file against that file's
+  directory (per file, so `extends` files use their own). CLI/env values are
+  never rewritten. `"existing"` resolves only paths that exist (optionally before a
+  `:args` suffix), for path-or-module-name values.
 - **Lenient names:** `ignore_hyphens` applies to both CLI long options and
   config keys (config also ignores underscores); config keys are canonicalised
   per table before `extends`/profile merging. Config keys are always
